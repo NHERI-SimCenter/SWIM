@@ -159,6 +159,8 @@ UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 #include <QtNetwork/QNetworkRequest>
 #include <QHostInfo>
 
+#include "NDMaterial.h"
+
 // OpenSees
 #include "Domain.h"
 #include "StandardStream.h"
@@ -3643,625 +3645,61 @@ void MainWindow::doWallAnalysis()
 
     // nodes
     Node **theNodes = new Node *[nn];
-    for (int j = 0; j < nn; j++) {
-        // Node(int tag, int ndof, double Crd1, double Crd2, Vector *displayLoc = 0);
-        Node *theNode = new Node(j+1, 3, xc[j], yc[j]);
-        theNodes[j] = theNode;
-        theDomain.addNode(theNode);
 
-        // SP constraints
-        if (j==0) {
-            for (int dof = 0; dof < 3; dof++) {
-                SP_Constraint *theSP = new SP_Constraint(j+1, dof, 0., true);
-                theDomain.addSP_Constraint(theSP);
-            }
-        }
-        if (j==nn-1) {
-            for (int dof = 1; dof < 3; dof++) {
-                SP_Constraint *theSP = new SP_Constraint(j+1, dof, 0., true);
-                theDomain.addSP_Constraint(theSP);
-            }
-        }
 
-        // MP constraints
-        if (j==2) {
-            if (elType == "truss") {
-                MP_Constraint *theMP = new MP_Constraint(j+1, j, eqFIX, dofFIX, dofFIX);
-                theDomain.addMP_Constraint(theMP);
+    Node *theNode = new Node(1, 2, 0.,0.);
+    theNodes[1] = theNode;
+    theDomain.addNode(theNode);
+    theNode = new Node(2, 2, 7.5785,0.);
+    theNodes[2] = theNode;
+    theDomain.addNode(theNode);
+    theNode = new Node(3, 2, 7.5785,11.3329);
+    theNodes[3] = theNode;
+    theDomain.addNode(theNode);
+    theNode = new Node(4, 2, 0.,11.3329);
+    theNodes[4] = theNode;
+    theDomain.addNode(theNode);
+    theNode = new Node(5, 2, 7.5785,22.6657);
+    theNodes[5] = theNode;
+    theDomain.addNode(theNode);
+    theNode = new Node(6, 2, 0.,22.6657);
+    theNodes[6] = theNode;
+    theDomain.addNode(theNode);
+    theNode = new Node(7, 2, 7.5785,33.9986 );
+    theNodes[7] = theNode;
+    theDomain.addNode(theNode);
+    theNode = new Node(8, 2, 0.,33.9986 );
+    theNodes[8] = theNode;
+    theDomain.addNode(theNode);
 
-            } else if (type_conn1 == 1) {
-                MP_Constraint *theMP = new MP_Constraint(j+1, j, eqFIX, dofFIX, dofFIX);
-                theDomain.addMP_Constraint(theMP);
 
-            } else if (type_conn1 == 0) {
-                MP_Constraint *theMP = new MP_Constraint(j+1, j, eqPIN, dofPIN, dofPIN);
-                theDomain.addMP_Constraint(theMP);
-            }
-        }
-        if (j==nn-2) {           
-            if (elType == "truss") {
-                MP_Constraint *theMP = new MP_Constraint(j, j+1, eqFIX, dofFIX, dofFIX);
-                theDomain.addMP_Constraint(theMP);
-
-            } else if (type_conn2 == 1) {
-                MP_Constraint *theMP = new MP_Constraint(j, j+1, eqFIX, dofFIX, dofFIX);
-                theDomain.addMP_Constraint(theMP);
-
-            } else if (type_conn2 == 0) {
-                MP_Constraint *theMP = new MP_Constraint(j, j+1, eqPIN, dofPIN, dofPIN);
-                theDomain.addMP_Constraint(theMP);
-            }
-        }
-    }
 
     // materials
-    UniaxialMaterial *theMat = 0;
-    switch (inMat->currentIndex()) {
-    case 0:
-        // Steel01 (int tag, double fy, double E0, double b, double a1, double a2, double a3, double a4)
-        theMat = new Steel01(1, theSteel.fy, theSteel.Es,
-                             theSteel.bk, // kin
-                             theSteel.a1, theSteel.a2, theSteel.a3, theSteel.a4); // iso
-        break;
+    UniaxialMaterial *theMat1 = 0;
+    theMat1 = new Steel01(1, 84.6555, 29000, 0.01 );
+    UniaxialMaterial *theMat2 = 0;
+    theMat2 = new Steel01(2, 83.5388, 29000, 0.01 );
+    UniaxialMaterial *theMat3 = 0;
+    theMat3 = new Steel01(3, 84.6555, 29000, 0.01 );
 
-    case 1:
-        // Steel02 (int tag, double fy, double E0, double b, double R0, double cR1, double cR2, double a1, double a2, double a3, double a4)
-        theMat = new Steel02(1, theSteel.fy, theSteel.Es,
-                             theSteel.bk, theSteel.R0k, theSteel.r1, theSteel.r2, // kin
-                             theSteel.a1, theSteel.a2, theSteel.a3, theSteel.a4); // iso
 
-        // double sigInit =0.0);
-        break;
-
-    case 2:
-        // Steel4 ($matTag $f_y $E_0 < -asym > < -kin $b_k $R_0 $r_1 $r_2 < $b_kc $R_0c $r_1c $r_2c > > < -iso $b_i $rho_i $b_l $R_i $l_yp < $b_ic $rho_ic $b_lc $R_ic> > < -ult $f_u $R_u < $f_uc $R_uc > > < -init $sig_init > < -mem $cycNum >)
-        theMat = new Steel4(1,theSteel.fy,theSteel.Es,
-                            theSteel.bk, theSteel.R0k, theSteel.r1, theSteel.r2, // kin
-                            theSteel.bkc, theSteel.R0kc, theSteel.r1c, theSteel.r2c,
-                            theSteel.bi, theSteel.rhoi, theSteel.bl, theSteel.Ri, theSteel.lyp, // iso
-                            theSteel.bic, theSteel.rhoic, theSteel.blc, theSteel.Ric,
-                            100000000.0*theSteel.fy,50.,100000000.0*theSteel.fy,50., //ult
-                            50,0.0); // cycNum + sig_0
-        break;
-
-    default:
-        QMessageBox::warning(this, "Warning","Material not defined.");
-        return;
-    }
-
-    // fatigue
-    double Dmax = 1.0;
-    UniaxialMaterial *theFatMat = new FatigueMaterial(2, *theMat, Dmax,
-                            theFat.e0, theFat.m, theFat.emin, theFat.emax);
-
-    // include Fat?
-    UniaxialMaterial *theMatIncl;
-    if (inclFat == true)
-        theMatIncl = theFatMat->getCopy();
-    else
-        theMatIncl = theMat->getCopy();
-
-    // fibers
-    fiberPointer theFibers;
-    int nf = 0;
-
-    // UniaxialFiber2d (int tag, UniaxialMaterial &theMat, double Area, double position);
-    switch (sxnType)
-    {
-    case sxnShape::W:
-    case sxnShape::M:
-    case sxnShape::S:
-    case sxnShape::HP:
-        if (orient == "x-x") {
-            double d0 = theSxn.d - 2*theSxn.tf;
-            nf = nd + 2*ntf;
-            theFibers.data = new Fiber *[nf];
-            theFibers.fill = 0;
-
-            // add fibers
-            // FiberRect2D(theFibers, theMat, yi= patch center, l= length, h= height, nf per patch)
-            // flange-bottom
-            theFibers = FibRect2D(theFibers, theMatIncl, -(d0+theSxn.tf)/2,theSxn.tf,theSxn.bf,ntf);
-            // flange-top
-            theFibers = FibRect2D(theFibers, theMatIncl, (d0+theSxn.tf)/2,theSxn.tf,theSxn.bf,ntf);
-            // web
-            theFibers = FibRect2D(theFibers, theMatIncl, 0,d0,theSxn.tw,nd);
-        }
-        else
-        {
-            double d0 = theSxn.d - 2*theSxn.tf;
-            nf = ntw + 2*nbf;
-            theFibers.data = new Fiber *[nf];
-            theFibers.fill = 0;
-
-            //double a = (-(2*bf*tf+d*tw)+sqrt(pow(2*bf*tf+d*tw,2)-4*2*tf*tw*A))/(-2*2*tf*tw);
-            //qDebug() << "MODIFY" << a;
-
-            // add fibers
-            // FiberRect2D(theFibers, theMat, yi= patch center, l= length, h= height, nf per patch)
-            // flange-bottom
-            theFibers = FibRect2D(theFibers, theMatIncl, 0,theSxn.bf,theSxn.tf,nbf);
-            // flange-top
-            theFibers = FibRect2D(theFibers, theMatIncl, 0,theSxn.bf,theSxn.tf,nbf);
-            // web
-            theFibers = FibRect2D(theFibers, theMatIncl, 0,theSxn.tw,d0,ntw);
-        }
-        break;
-
-    case sxnShape::C:
-    case sxnShape::MC:
-    case sxnShape::L:
-    case sxnShape::dL:
-    case sxnShape::WT:
-    case sxnShape::MT:
-    case sxnShape::ST:
-        QMessageBox::warning(this, "Warning","Section not yet implemented.");
-        return;
-        break;
-
-    case sxnShape::HSS:
-        if (orient == "x-x") {
-            double d0 = theSxn.d - 2*theSxn.tf;
-            //double b0 = bf - 2*tw;
-            nf = 2*nd + 2*ntf;
-            theFibers.data = new Fiber *[nf];
-            theFibers.fill = 0;
-
-            // add fibers
-            // FiberRect2D(theFibers, theMat, yi= patch center, l= length, h= height, nf per patch)
-            // flange-bottom
-            theFibers = FibRect2D(theFibers, theMatIncl, -(d0+theSxn.tf)/2,theSxn.tf,theSxn.bf,ntf);
-            // flange-top
-            theFibers = FibRect2D(theFibers, theMatIncl, (d0+theSxn.tf)/2,theSxn.tf,theSxn.bf,ntf);
-            // web
-            theFibers = FibRect2D(theFibers, theMatIncl, 0,d0,theSxn.tw,nd);
-            // web
-            theFibers = FibRect2D(theFibers, theMatIncl, 0,d0,theSxn.tw,nd);
-        }
-        else
-        {
-            //double d0 = d - 2*tf;
-            double b0 = theSxn.bf - 2*theSxn.tw;
-            nf = 2*ntw + 2*nbf;
-            theFibers.data = new Fiber *[nf];
-            theFibers.fill = 0;
-
-            // add fibers
-            // flange-bottom
-            theFibers = FibRect2D(theFibers, theMatIncl, 0,b0,theSxn.tf,nbf);
-            // flange-top
-            theFibers = FibRect2D(theFibers, theMatIncl, 0,b0,theSxn.tf,nbf);
-            // web
-            theFibers = FibRect2D(theFibers, theMatIncl, -(b0+theSxn.tw)/2,theSxn.tw,theSxn.d,ntw);
-            // web
-            theFibers = FibRect2D(theFibers, theMatIncl, (b0+theSxn.tw)/2,theSxn.tw,theSxn.d,ntw);
-        }
-        break;
-
-    case sxnShape::RND:
-    case sxnShape::PIPE:
-        nf = ntw*nd;
-        theFibers.data = new Fiber *[nf];
-        theFibers.fill = nf;
-
-        // geometry
-        double dr = theSxn.tw/ntw;
-        double dt = 2*pi/nd;
-        double r0 = theSxn.d-theSxn.tw;
-
-        // add fibers
-        for (int j=0, k=0; j<ntw; j++) {
-            double Af = (pow(r0+(j+1)*dr,2)-pow(r0+j*dr,2))*dt/2;
-
-            for (int m=0; m<nd; m++, k++) {
-                double r = r0 + dr/2 + j*dr;
-                double t = m*dt;
-                double y = r*cos(t);
-                Fiber *theFiber = new UniaxialFiber2d(k+1,*theMatIncl,Af,y);
-                theFibers.data[k] = theFiber;
-            }
-        }
-        break;
-    };
-
-    // geometric transformation
-    // CorotCrdTransf2d (int tag, const Vector &rigJntOffsetI, const Vector &rigJntOffsetJ)
-    static Vector rigJnt(2); rigJnt.Zero();
-    CrdTransf *theTransf = new CorotCrdTransf2d(1,rigJnt,rigJnt);
-
-    // integration types
-    //if (IM == )
-    BeamIntegration *theIntegration = new LobattoBeamIntegration();
-
-    // sections
-    SectionForceDeformation **theSections = new SectionForceDeformation *[NIP];
-    // add section
-    for (int j=0; j < NIP; j++) {
-        SectionForceDeformation *theSection = new FiberSection2d(1, nf, theFibers.data);
-        theSections[j] = theSection;
-    }
 
     /*
-    // Print flexibility
-    Matrix F = theSection[0].getInitialTangent();
-    for (int j = 0; j<6; j++) {
-        for (int k = 0; k<6; k++) {
-            qDebug() << F(j,k);
-        }
-    }
+        # nDMaterial PlaneStressRebarMaterial matTag matTag_for_uniaxialMaterial angle_of_rebar
+        nDMaterial PlaneStressRebarMaterial 1 1 90
+        nDMaterial PlaneStressRebarMaterial 2 2 90
+        nDMaterial PlaneStressRebarMaterial 3 3 0
     */
 
-    // define main elements
-    Element **theEls = new Element *[ne];
-    double xi[10];
+    //define pars for PlasticDamageConcretePlaneStress
+    double E = 4635.43;
+    double nu = 0.2;
+    double fc = 6.61349*0.7;
+    double ft = fc*0.25;
 
-    for (int j=0, k=0; j<ne+4; j++) {
 
-        if (j==0) {
-            Element *theEl = new ElasticBeam2d(j+1, conn1.rigA*theSxn.A, theSteel.Es, conn1.rigI*theSxn.I, j+1, j+2, *theTransf);
-            theDomain.addElement(theEl);
-            //theEls[k] = theEl;
-            //theEl->Print(opserr);
-            //k++;
 
-        } else if (j==ne+3) {
-            Element *theEl = new ElasticBeam2d(j+1, conn2.rigA*theSxn.A, theSteel.Es, conn2.rigI*theSxn.I, j+1, j+2, *theTransf);
-            theDomain.addElement(theEl);
-            //theEls[k] = theEl;
-            //theEl->Print(opserr);
-            //k++;
 
-        } else if (j==1) {
-            /*
-            // spring i
-            theMatConn = new Steel01(2,fy,Es,b);
-            Element *theEl = new ZeroLength(j+1, 2, j+1, j+2, x, y, theMatConn, dir, 0);
-            theDomain.addElement(theEl);
-            delete theMatConn; // each ele makes it's own copy
-            */
-
-        } else if (j==ne+2) {
-            /*
-            // spring j
-            theMatConn = new Steel01(3,fy,Es,b);
-            Element *theEl = new ZeroLength(j+1, 2, j+1, j+2, x, y, theMatConn, dir, 0);
-            theDomain.addElement(theEl);
-            delete theMatConn; // each ele makes it's own copy
-            */
-
-        } else {
-            Element *theEl;
-
-            // ForceBeamColumn2d (int tag, int nodeI, int nodeJ, int numSections, SectionForceDeformation **sec, BeamIntegration &beamIntegr, CrdTransf2d &coordTransf, double rho=0.0, int maxNumIters=10, double tolerance=1.0e-12)
-            switch (inElType->currentIndex()) {
-            case 0:
-                theEl = new ForceBeamColumn2d(j+1, j+1, j+2, NIP, theSections, *theIntegration, *theTransf);
-                theDomain.addElement(theEl);
-                theEls[k] = theEl;
-                k++;
-                //theEl->Print(opserr);
-
-                // IP locations
-                theIntegration->getSectionLocations(NIP,1,xi);
-
-                /*
-                // recorders
-                theResp[j] = "basicForces";
-                theResp[j] = "plasticDeformation";
-                theResp[j] = "basicDeformation"; // eps, theta1, theta2
-                theResp[j] = "integrationPoints";
-                theResp[j] = "section";
-
-                // truss
-                theResp[j] = "material";
-                */
-
-                break;
-
-            case 1:
-                // DispBeamColumn2d (int tag, int nd1, int nd2, int numSections, SectionForceDeformation **s, BeamIntegration &bi, CrdTransf2d &coordTransf, double rho=0.0)
-                theEl = new DispBeamColumn2d(j+1, j+1, j+2, NIP, theSections, *theIntegration, *theTransf);
-                theDomain.addElement(theEl);
-                theEls[k] = theEl;
-                k++;
-                //theEl->Print(opserr);
-
-                // IP locations
-                theIntegration->getSectionLocations(NIP,1,xi);
-
-                break;
-
-            case 2:
-                // CorotTruss (int tag, int dim, int Nd1, int Nd2, UniaxialMaterial &theMaterial, double A, double rho=0.0)
-                theEl = new CorotTruss (j+1, 2, j+1, j+2, *theMatIncl, theSxn.A);
-                theDomain.addElement(theEl);
-                theEls[k] = theEl;
-                k++;
-                //theEl->Print(opserr);
-
-                // IP locations
-                xi[0] = 0; xi[1] = 1;
-
-                break;
-            }
-        }
-    }
-
-    // get fiber locations
-    double *yf = new double[nf];
-    for (int j=0; j<nf; j++) {
-        double yLoc, zLoc;
-        theFibers.data[j]->getFiberLocation(yLoc, zLoc);
-        yf[j] = yLoc;
-    }
-
-    // recorders
-    int argc =  1;
-    const char **argv = new const char *[argc];
-
-    // pull basic force
-    char text1[] = "basicForces";
-    argv[0] = text1;
-    Response **theBasicForce = new Response *[ne];
-    for (int j=0; j<ne; j++) {
-        theBasicForce[j]  = theEls[j]->setResponse(argv, argc, opserr);
-    }
-
-    // plastic def - epsP; theta1P; theta2p
-    char text2[] = "plasticDeformation";
-    argv[0] = text2;
-    Response **thePlasticDef = new Response *[ne];
-    for (int j=0; j<ne; j++) {
-        thePlasticDef[j]  = theEls[j]->setResponse(argv, argc, opserr);
-    }
-
-    // section resp - GaussPointOutput; number; eta
-
-    /*
-    argc =  3;
-    const char **argv = new const char *[argc];
-    char text3[] = "sectionX";
-    char text4[] = "fiber";
-    //char text5[] = "stressStrain";
-    //char text6[] = "deformation"; // axial strain/curv
-    argv[0] = text3;
-    argv[1] = text4;
-    Response **theSxn = new Response *[ne];
-    for (int j=0; j<ne; j++) {
-        for (int k=0; k<NIP; k++)
-            for (int l=0; l<nf; l++)
-            {
-                //argv[1] = k;
-                theSxn[j]  = theEls[j]->setResponse(argv, argc, opserr);
-            }
-            */
-
-    /*
-    // recorders
-    theResp[j] = "basicForces";
-    theResp[j] = "plasticDeformation";
-    theResp[j] = "basicDeformation"; // eps, theta1, theta2
-    theResp[j] = "integrationPoints";
-    theResp[j] = "section";
-    */
-
-    // clean-up
-    delete theMat;
-    delete theFatMat;
-    delete theMatIncl;
-    delete [] theFibers.data;
-    delete [] theSections;
-    delete theIntegration;
-    delete theTransf;
-
-    // load pattern
-    //PathTimeSeries *theSeries = new PathTimeSeries(1,*expP,*time);
-    LinearSeries *theSeries = new LinearSeries(1);
-    LoadPattern *theLoadPattern = new LoadPattern(1);
-    theLoadPattern->setTimeSeries(theSeries);
-
-    // nodal load
-    static Vector load(3); load.Zero(); load(0) = 1;
-    NodalLoad *theLoad = new NodalLoad(1,nn,load);
-    theLoadPattern->addNodalLoad(theLoad);
-
-    // add to domain
-    theDomain.addLoadPattern(theLoadPattern);
-
-    // initial parameters
-    double tol0 = 1.0e-8;
-    double dU0 = 0.0;
-
-    // solution algorithms
-    //EquiSolnAlgo *theNewton = new NewtonRaphson();
-    EquiSolnAlgo *theKrylov = new KrylovNewton();
-    //EquiSolnAlgo *theLineSearch = new NewtonLineSearch();
-
-    // analysis parameters
-    AnalysisModel       *theModel = new AnalysisModel();
-    CTestEnergyIncr     *theTest = new CTestEnergyIncr(tol0, 25, 0);
-    StaticIntegrator    *theIntegr = new DisplacementControl(nn, 0, dU0, &theDomain, 1, dU0, dU0);
-    ConstraintHandler   *theHandler = new PlainHandler();
-    RCM                 *theRCM = new RCM();
-    DOF_Numberer        *theNumberer = new DOF_Numberer(*theRCM);
-#ifdef _FORTRAN_LIBS
-    BandGenLinSolver    *theSolver = new BandGenLinLapackSolver();
-    LinearSOE           *theSOE = new BandGenLinSOE(*theSolver);
-#else
-    ProfileSPDLinSolver *theSolver = new ProfileSPDLinDirectSolver();
-    LinearSOE           *theSOE = new ProfileSPDLinSOE(*theSolver);
-#endif
-
-    theDomain.record();
-
-    // initialize analysis
-    StaticAnalysis *theAnalysis = new StaticAnalysis (
-        theDomain,*theHandler,*theNumberer,*theModel,*theKrylov,*theSOE,*theIntegr);
-    theKrylov->setConvergenceTest(theTest);
-    int ok = theAnalysis->analyze(1);
-    //theDomain.Print(opserr);
-
-    // re-size response and initialize to zero.
-    zeroResponse();
-
-    // initialize
-    double tol = tol0;
-    double dT0 = 0.01;
-    double dT = dT0;
-    double tcurr = 0.;
-    double tfinal = (*time)[numSteps-1];
-
-    // convergence parameters
-    int numConv = 20;
-    int tConv = 0;
-    int t = 0;
-
-    while (tcurr <= tfinal && stop == false)
-    {
-        double Ucurr = theNodes[nn-1]->getDisp()(0);
-        double U = interpolate(*time, *expD, tcurr+dT, true);
-        double dU = U-Ucurr;
-
-        // set up integrator
-        StaticIntegrator *theIntegrMod = new DisplacementControl(nn, 0, dU, &theDomain, 1, dU, dU);
-        CTestEnergyIncr *theTestMod = new CTestEnergyIncr(tol, 25, 0);
-
-        // analysis
-        theAnalysis->setIntegrator(*theIntegrMod);
-        theKrylov->setConvergenceTest(theTestMod);
-        ok = theAnalysis->analyze(1);
-
-        while (ok != 0 && stop == false)
-        {
-            // reset number of converged steps
-            tConv = 0;
-            // check cancelling
-            if (progressDialog.wasCanceled())
-                stop = true;
-
-            // cut time step
-            if (fabs(dT) > 1.0e-4) {
-                dT = dT/2;
-                qDebug() << "cut dT" << dT;
-            }
-            else {
-                // increase tol (if dT is too small)
-                dT = 1.0e-4;
-                tol = tol*10;
-                qDebug() << "incr tol" << tol;
-            }
-
-            // find dU
-            double U = interpolate(*time, *expD, tcurr+dT, true);
-            double dU = U-Ucurr;
-
-            // modify step/tol
-            StaticIntegrator *theIntegrTrial = new DisplacementControl(nn, 0, dU, &theDomain, 1, dU, dU);
-            CTestEnergyIncr *theTestTrial = new CTestEnergyIncr(tol, 1000, 0);
-
-            // analysis
-            theAnalysis->setIntegrator(*theIntegrTrial);
-            theKrylov->setConvergenceTest(theTestTrial);
-            ok = theAnalysis->analyze(1);
-
-            // convergence failure
-            if (tol > 1.0e-2 && ok != 0)
-            {
-                stop = true;
-                QMessageBox::warning(this, tr("Application"),
-                                     tr("Analysis Failed. Results truncated accordingly."));
-            }
-        }
-
-        // reset
-        if (ok == 0)
-        {
-            // store time
-            tcurr = tcurr + dT;
-            // check cancelling
-            if (progressDialog.wasCanceled())
-                stop = true;
-
-            if (tcurr >= (*time)[t])
-            {
-                progressDialog.setValue(progressDialog.value()+1);
-
-                // store node response
-                QVector<double> rx, ry;
-                rx << 0. << 1. << 2. << 0. << 1. << 2. << 0. << 1.0 << 2. ;
-                ry << 0. << 0. << 0. << 1. << 1. << 1. << 2. << 2.0 << 2. ;
-
-                for (int j=0; j<nn; j++) {
-                    const Vector &nodeU = theNodes[j]->getDisp();
-                    //(*Ux->data[j])[t] = nodeU(0);
-                    //(*Uy->data[j])[t] = nodeU(1);
-                    (*Ux->data[j])[t] = rx[j];
-                    (*Uy->data[j])[t] = ry[j];
-
-                }
-                // store basic force
-                for (int j=0; j<ne; j++) {
-                    //const Vector &q = theEls[j]->getResistingForce();
-                    //(*q1->data[j])[t] = -q(0); // N1
-                    //(*q2->data[j])[t] = q(2); // M1
-                    //(*q3->data[j])[t] = -q(5); // M2
-
-                    theBasicForce[j]->getResponse();
-                    Information &info = theBasicForce[j]->getInformation();
-
-                    if (elType == "truss") {
-                        double theDouble = info.theDouble;
-                        (*q1->data[j])[t] = theDouble;
-
-                    } else {
-                        Vector *theVector = info.theVector;
-                        (*q1->data[j])[t] = (*theVector)[0];
-                        (*q2->data[j])[t] = (*theVector)[1];
-                        (*q3->data[j])[t] = -(*theVector)[2];
-                    }
-                }
-                t++;
-            }
-
-            // reset
-            tConv++;
-
-            // reset tol
-            if (tConv >= numConv && tol/10 >= tol0) {
-                tConv = 0;
-                tol = tol/10;
-                qDebug() << "cut tol" << dT;
-            }
-
-            // reset dT
-            if (tConv >= numConv && fabs(dT)*1.1 <= fabs(dT0)) {
-                tConv = 0;
-                dT = dT*1.1;
-                qDebug() << "increase dT" << dT;
-            }
-        }
-    }
-
-    // set plot
-    dPlot->setResp(Ux,Uy);
-    pPlot->setResp(q1,q1);
-    mPlot->setResp(q2,q3);
-    hPlot->setResp(&(*Ux->data[nn-1]),&(*q1->data[0]));
-
-    hPlot->plotResponse(0);
-
-    // close the dialog.
-    progressDialog.close();
-
-    // clean-up
-    delete [] yf;
-    delete [] theNodes;
-    delete [] theEls;
-    delete [] argv;
-    for (int j=0; j<ne; j++)
-         delete theBasicForce[j];
-    delete [] theBasicForce;
-    delete theAnalysis;
 }
 
 void MainWindow::setExp(Experiment *exp)
