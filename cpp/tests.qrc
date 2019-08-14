@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>ExampleFiles/TCBF3_W8X28.json</file>
+        <file>ExampleFiles/NCBF1_HSS6x6.json</file>	
+    </qresource>
+</RCC>
