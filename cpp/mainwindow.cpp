@@ -160,6 +160,7 @@ UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 #include <QHostInfo>
 
 #include "NDMaterial.h"
+#include <PlaneStressRebarMaterial.h>
 
 // OpenSees
 #include "Domain.h"
@@ -3696,6 +3697,7 @@ void MainWindow::doWallAnalysis()
     double nu = 0.2;
     double fc = 6.61349*0.7;
     double ft = fc*0.25;
+    //nDMaterial PlasticDamageConcretePlaneStress 4 $E $nu $ft $fc $beta $Ap $An $Bn ;# concrete
 
 
 

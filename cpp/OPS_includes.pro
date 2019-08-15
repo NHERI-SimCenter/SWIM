@@ -125,6 +125,8 @@ SOURCES += ./ops/Vector.cpp
 SOURCES += ./ops/Vertex.cpp
 SOURCES += ./ops/VertexIter.cpp
 SOURCES += ./ops/ZeroLength.cpp
+SOURCES += ./ops/PlaneStressRebarMaterial.cpp
+SOURCES += ./ops/NDMaterial.cpp
 
 HEADERS += \
         ops/Analysis.h \
@@ -282,7 +284,8 @@ HEADERS += \
         ops/ZeroLength.h \
         ops/classTags.h \
         ops/elementAPI.h \
-    ops/OPS_Globals.h
+        ops/OPS_Globals.h \
+        ops/PlaneStressRebarMaterial.h
 
 #SOURCES += ./ops/BandGenLinSOE.cpp
 #SOURCES += ./ops/BandGenLinSolver.cpp
