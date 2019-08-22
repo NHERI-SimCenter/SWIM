@@ -48,12 +48,15 @@ UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 #include <QtWidgets>
 #include <QtCore>
 #include <QDebug>
+#include <QFile>
+#include <QDir>
 #include <qcustomplot/qcustomplot.h>
 
 #include <Vector.h>
 
 #include <HeaderWidget.h>
 #include <FooterWidget.h>
+#include "ai.h"
 
 class Experiment;
 class Resp;
@@ -553,6 +556,12 @@ private:
     double braceWidth;
 
     QNetworkAccessManager *manager;
+
+    QString rootDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation); // qApp->applicationDirPath();//
+    bool tmpVar1 = QDir(rootDir).exists() ? false : QDir().mkdir(rootDir);
+    QString modelPath = QDir(rootDir).filePath("model.pt");
+    bool tmpVar2 = QFile::copy(":/MyResources/model.pt", modelPath); // TODO: check is succeed
+    AI ai = AI(modelPath.toStdString());
 };
 
 #endif // MAINWINDOW_H

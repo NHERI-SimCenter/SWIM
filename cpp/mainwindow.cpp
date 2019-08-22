@@ -160,6 +160,13 @@ UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 #include <QHostInfo>
 
 #include "NDMaterial.h"
+#include <PlaneStressRebarMaterial.h>
+#include <PlasticDamageConcretePlaneStress.h>
+#include <PlaneStressLayeredMaterial.h>
+#include <FourNodeQuad.h>
+
+
+
 
 // OpenSees
 #include "Domain.h"
@@ -3673,8 +3680,7 @@ void MainWindow::doWallAnalysis()
     theDomain.addNode(theNode);
 
 
-
-    // materials
+    // uniaxial materials
     UniaxialMaterial *theMat1 = 0;
     theMat1 = new Steel01(1, 84.6555, 29000, 0.01 );
     UniaxialMaterial *theMat2 = 0;
@@ -3682,7 +3688,8 @@ void MainWindow::doWallAnalysis()
     UniaxialMaterial *theMat3 = 0;
     theMat3 = new Steel01(3, 84.6555, 29000, 0.01 );
 
-
+    // nDmats
+    int matTag = 0;
 
     /*
         # nDMaterial PlaneStressRebarMaterial matTag matTag_for_uniaxialMaterial angle_of_rebar
@@ -3691,12 +3698,50 @@ void MainWindow::doWallAnalysis()
         nDMaterial PlaneStressRebarMaterial 3 3 0
     */
 
+    NDMaterial *theMat;
+    matTag += 1;
+    theMat = new PlaneStressRebarMaterial(matTag, *theMat1, 90.);
+    OPS_addNDMaterial(theMat);
+    matTag += 1;
+    theMat = new PlaneStressRebarMaterial(matTag, *theMat2, 90.);
+    OPS_addNDMaterial(theMat);
+    matTag += 1;
+    theMat = new PlaneStressRebarMaterial(matTag, *theMat3, 0.);
+    OPS_addNDMaterial(theMat);
+
     //define pars for PlasticDamageConcretePlaneStress
     double E = 4635.43;
     double nu = 0.2;
     double fc = 6.61349*0.7;
     double ft = fc*0.25;
+    double beta = 5.462261077231849e-01 ;
+    double Ap = 9.665784174420770e-02 ;
+    double An = 3.528346194898871e+00 ;
+    double Bn = 4.914497665322617e-01;
+    //nDMaterial PlasticDamageConcretePlaneStress 4 $E $nu $ft $fc $beta $Ap $An $Bn ;# concrete
+    matTag += 1;
+    theMat = new PlasticDamageConcretePlaneStress(matTag, E, nu, ft, fc, beta, Ap, An, Bn);
+    OPS_addNDMaterial(theMat);
 
+
+    /*
+    matTag += 1;
+    theMat = new PlaneStressLayeredMaterial(matTag, 3,theMat, 5.85852,theMat, 0.0316793,theMat,  0.0148032);
+    OPS_addNDMaterial(theMat);
+
+    nDMaterial PlaneStressLayeredMaterial 5 3 4 5.85852 1 0.0316793 3 0.0148032
+    nDMaterial PlaneStressLayeredMaterial 6 3 4 5.81253 2 0.0693821 3 0.0230882
+    nDMaterial PlaneStressLayeredMaterial 7 3 4 5.85852 1 0.0316793 3 0.0148032
+    nDMaterial PlaneStressLayeredMaterial 8 3 4 5.81253 2 0.0693821 3 0.0230882
+    */
+
+    /*
+    FourNodeQuad *theEle;
+    theEle = new FourNodeQuad(1, 1, 2,3,4,
+                           *theMat, 1.0, uBulk, 1.0, 1.0, 1.0, evoid, alpha, 0.0, g * 1.0); // -9.81 * theMat->getRho() TODO: theMat->getRho()
+
+    theDomain->addElement(theEle);
+*/
 
 
 
