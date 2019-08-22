@@ -29,6 +29,11 @@ include(../../SimCenterCommon/Common/Common.pri)
 # load OpenSees
 include(OPS_includes.pro)
 
+
+INCLUDEPATH += $$PWD/libtorch/include
+LIBS += -L/Users/simcenter/Codes/SimCenter/SWIM/cpp/libtorch/lib
+LIBS += -ltorch -lc10
+
 #win32: INCLUDES += "./ops"
 #win32: LIBS += -llapack -lblas
 #unix:  QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-variable -std=c++11
@@ -51,7 +56,8 @@ SOURCES += \
     historywidget.cpp \
     deformwidget.cpp \
     hysteresiswidget.cpp \
-    qcustomplot/qcustomplot.cpp
+    qcustomplot/qcustomplot.cpp \
+    ai.cpp
 
 HEADERS += \
     mainwindow.h \
@@ -61,7 +67,8 @@ HEADERS += \
     historywidget.h \
     deformwidget.h \
     hysteresiswidget.h \
-    qcustomplot/qcustomplot.h
+    qcustomplot/qcustomplot.h \
+    ai.h
 
 #FORMS += \
 #        mainwindow.ui
@@ -69,4 +76,8 @@ HEADERS += \
 RESOURCES += \
     aiscshapedatabase.qrc \
     tests.qrc \
-    braceImages.qrc
+    braceImages.qrc \
+    ai.qrc
+
+
+DISTFILES +=

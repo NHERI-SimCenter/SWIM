@@ -127,6 +127,21 @@ SOURCES += ./ops/VertexIter.cpp
 SOURCES += ./ops/ZeroLength.cpp
 SOURCES += ./ops/PlaneStressRebarMaterial.cpp
 SOURCES += ./ops/NDMaterial.cpp
+SOURCES += ./ops/BeamFiberMaterial.cpp
+SOURCES += ./ops/BeamFiberMaterial2d.cpp
+SOURCES += ./ops/PlateFiberMaterial.cpp
+SOURCES += ./ops/PlaneStressMaterial.cpp
+SOURCES += ./ops/PlasticDamageConcretePlaneStress.cpp
+SOURCES += ./ops/ElasticIsotropicMaterial.cpp
+SOURCES += ./ops/ElasticIsotropicPlaneStress2D.cpp
+SOURCES += ./ops/ElasticIsotropicPlaneStrain2D.cpp
+SOURCES += ./ops/ElasticIsotropicAxiSymm.cpp
+SOURCES += ./ops/ElasticIsotropicThreeDimensional.cpp
+SOURCES += ./ops/ElasticIsotropicPlateFiber.cpp
+SOURCES += ./ops/ElasticIsotropicBeamFiber.cpp
+SOURCES += ./ops/ElasticIsotropicBeamFiber2d.cpp
+SOURCES += ./ops/FourNodeQuad.cpp
+SOURCES += ./ops/PlaneStressLayeredMaterial.cpp
 
 HEADERS += \
         ops/Analysis.h \
@@ -285,7 +300,18 @@ HEADERS += \
         ops/classTags.h \
         ops/elementAPI.h \
         ops/OPS_Globals.h \
-        ops/PlaneStressRebarMaterial.h
+        ops/PlaneStressRebarMaterial.h \
+        ops/PlasticDamageConcretePlaneStress.h \
+        ops/ElasticIsotropicMaterial.h \
+        ops/ElasticIsotropicPlaneStress2D.h \
+        ops/ElasticIsotropicPlaneStrain2D.h \
+        ops/ElasticIsotropicAxiSymm.h \
+        ops/ElasticIsotropicThreeDimensional.h \
+        ops/ElasticIsotropicPlateFiber.h \
+        ops/ElasticIsotropicBeamFiber.h \
+        ops/ElasticIsotropicBeamFiber2d.h \
+        ops/FourNodeQuad.h \
+        ops/PlaneStressLayeredMaterial.h
 
 #SOURCES += ./ops/BandGenLinSOE.cpp
 #SOURCES += ./ops/BandGenLinSolver.cpp
