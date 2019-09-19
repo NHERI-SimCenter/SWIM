@@ -57,6 +57,9 @@ UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 #include <HeaderWidget.h>
 #include <FooterWidget.h>
 #include "ai.h"
+#include "ConcreteShearWall.h"
+#include "OpenSeesTclBuilder.h"
+
 
 class Experiment;
 class Resp;
@@ -202,6 +205,13 @@ public:
     void copyright();
     void cite();
 
+    // createSAM  // adding wall
+    void createSAM();
+    void createSAMui();
+    void createBIMui();
+    void preprocess();
+
+
     // custom plots
     //void dPlot(QCustomPlot *plot, int Fig);
 
@@ -222,6 +232,22 @@ private slots:
     //connect(play,SIGNAL(clicked()), this, SLOT(play_clicked()));
     //connect(stop,SIGNAL(clicked()), this, SLOT(stop_clicked()));
     //connect(reset,SIGNAL(clicked()), this, SLOT(reset_clicked()));
+
+    // adding wall
+    void nofEdt_valueChanged(int nof);
+    void idFloorEdt_valueChanged_BIM(int idFloor);
+    void idFloorEdt_valueChanged_SAM(int idFloor);
+    void matSelectorBIM_valueChanged_BIM(int matID);
+    void rcSelector_valueChanged_SAM(int matID);
+    void concreteSelector_valueChanged_SAM(int matID);
+    void rebarSelector_valueChanged_SAM(int matID);
+    void steelSelector_valueChanged_SAM(int matID);
+    void getSAM();
+    void rc_valueChanged_SAM(double);
+    void concrete_valueChanged_SAM(double);
+    void rebar_valueChanged_SAM(double);
+    void steel_valueChanged_SAM(double);
+
 
     // Combo Box
     void inSxn_currentIndexChanged(int row);
@@ -331,6 +357,7 @@ private:
     void loadFile(const QString &fileName);
 
     void loadExperimentalFile(const QString &fileName);
+    void loadWallExperimentalFile(const QString &fileName);
 
     // initialize
 
@@ -562,6 +589,47 @@ private:
     QString modelPath = QDir(rootDir).filePath("model.pt");
     bool tmpVar2 = QFile::copy(":/MyResources/model.pt", modelPath); // TODO: check is succeed
     AI ai = AI(modelPath.toStdString());
+
+    // adding wall
+    ConcreteShearWall *theWall;
+    QGridLayout *wallConfigLay;
+    QGridLayout *wallSAMLay;
+    QGridLayout *wallBIMLay;
+    QVector<QGroupBox*> floorSAMs;
+    QVector<QGroupBox*> floorBIMs;
+    QVector<QVector<QGroupBox*>> matBIMs;
+    QString expDirName = "/Users/simcenter/Codes/SimCenter/SWIM/data/wallDemo";
+
+    QDir expDir = QDir(expDirName);
+    QVector<QComboBox*> matSelectorBIM;
+    int numMatsBIM=0;
+    int numFloors;
+    int currentFloorIDbim = 0;
+    OpenSeesTclBuilder *thePreprocessor = new OpenSeesTclBuilder();
+
+    QJsonObject samRoot;
+
+    QJsonObject SAM ;
+    QJsonObject geometry;
+    QJsonObject properties;
+    QJsonObject nodeMapping;
+    QJsonArray uniaxialMaterials;
+    QJsonArray ndMaterials;
+
+    QVector<QSpinBox *> matIDselector_rc ;
+    QVector<QSpinBox *> matIDselector_concrete ;
+    QVector<QSpinBox *> matIDselector_rebar ;
+    QVector<QSpinBox *> matIDselector_steel ;
+
+
+    QLineEdit *steelTyeEdt;
+    QVector<QDoubleSpinBox *> steelEEdt;
+    QVector<QDoubleSpinBox *> steelfyEdt;
+    QVector<QDoubleSpinBox *> steelbEdt;
+
+    QSpinBox *idFloorEdt_BIM ;
+    QSpinBox *idFloorEdt_SAM ;
+
 };
 
 #endif // MAINWINDOW_H

@@ -185,6 +185,10 @@ QDoubleSpinBox *addDoubleSpin(QString text,QString *unitText =0,
            QGridLayout *gridLay =0, int row =-1, int col =-1, int nrow =1, int ncol =1);
 QSpinBox *addSpin(QString text, QString *unitText =0,
            QGridLayout *gridLay =0, int row =-1, int col =-1, int nrow =1, int ncol =1);
+QLabel *addLabel(QString text,
+           QGridLayout *gridLay =0, int row =-1, int col =-1, int nrow =1, int ncol =1);
+QLineEdit *addLineEdit(QString text, QString labelText,
+           QGridLayout *gridLay =0, int row =-1, int col =-1, int nrow =1, int ncol =1);
 
 //---------------------------------------------------------------
 // structures
@@ -1137,7 +1141,21 @@ void MainWindow::loadFile(const QString &fileName)
     mFile.close();
 }
 
+void MainWindow::loadWallExperimentalFile(const QString &fileName)
+{
+    // open files
+    QFile mFile(fileName);
 
+    // open warning
+    if (!mFile.open(QFile::ReadOnly | QFile::Text)) {
+        QMessageBox::warning(this, tr("Application"),
+                tr("Cannot read file %1:\n%2.").arg(QDir::toNativeSeparators(fileName), mFile.errorString()));
+        return;
+    }
+
+    // close files
+    mFile.close();
+}
 
 
 // read experimental file
@@ -1806,6 +1824,7 @@ void MainWindow::in_conn2_currentIndexChanged(int row)
 void MainWindow::inExp_currentIndexChanged(int row) {
   if (row != -1) {
     loadExperimentalFile(inExp->itemData(row).toString());
+    loadWallExperimentalFile(inExp->itemData(row).toString()); // adding wall
   }
 }
 
@@ -3845,12 +3864,17 @@ void MainWindow::createInputPanel()
     QWidget *connTab = new QWidget;
     //QWidget *analyTab = new QWidget;
 
+
+
     // layouts
     inLay = new QVBoxLayout;
     QGridLayout *expLay = new QGridLayout();
     QGridLayout *elLay = new QGridLayout();
     QGridLayout *sxnLay = new QGridLayout();
     QGridLayout *matLay = new QGridLayout();
+
+
+
 
     // dynamic labels
     deltaL = new QLabel;
@@ -4300,6 +4324,92 @@ void MainWindow::createInputPanel()
     connTab->setLayout(connLay);
     connLay->setRowStretch(connLay->rowCount(),1);
 
+
+    /*
+     * ---------------------------------------------------
+     *adding wall - begin
+     * ---------------------------------------------------
+     */
+    createSAM();
+    numFloors = theWall->numFloors;
+
+    // BIM tab
+    QWidget *wallConfigTab = new QWidget;
+    wallBIMLay = new QGridLayout();
+
+
+    QLineEdit *expNameEdt = addLineEdit(tr("Experiment name: "), QString("my cool experiment"),wallBIMLay,0,0);
+    expNameEdt->setDisabled(true);
+
+    QSpinBox *nofEdt = addSpin(tr("Number of floors: "),&blank,wallBIMLay,1,0);
+    nofEdt->setValue(theWall->numFloors);
+    nofEdt->setDisabled(true);
+
+    idFloorEdt_BIM = addSpin(tr("Select floor: "),&blank,wallBIMLay,2,0);
+    idFloorEdt_BIM->setMinimum(1);
+    idFloorEdt_BIM->setMaximum(theWall->numFloors);
+    idFloorEdt_BIM->setValue(1);
+
+    createBIMui();
+
+    wallBIMLay->setRowStretch(wallBIMLay->rowCount(),1);
+
+    connect(nofEdt,SIGNAL(valueChanged(int)), this, SLOT(nofEdt_valueChanged(int)));
+    connect(idFloorEdt_BIM, SIGNAL(valueChanged(int)), this, SLOT(idFloorEdt_valueChanged_BIM(int)));
+
+    wallConfigTab->setLayout(wallBIMLay);
+    tabWidget->addTab(wallConfigTab, "Wall info");
+
+
+    // SAM tab
+    QWidget *wallSAMTab = new QWidget;
+    wallSAMLay = new QGridLayout();
+
+    QGroupBox *meshBox = new QGroupBox("Global Mesh Control");
+    QGridLayout *meshBoxLay = new QGridLayout();
+    ina1 = addDoubleSpin(tr("Web Element Size"),&inch,meshBoxLay,0,0);
+    ina1->setToolTip(tr(""));
+    ina2 = addDoubleSpin(tr("Boundary Element Size"),&inch,meshBoxLay,1,0);
+    ina2->setToolTip(tr(""));
+    meshBoxLay->setColumnStretch(1,1);
+    meshBoxLay->setRowStretch(1,1);
+    meshBox->setLayout(meshBoxLay);
+
+    wallSAMLay->addWidget(meshBox,0,0);
+
+
+    idFloorEdt_SAM = addSpin(tr("Select floor: "),&blank,wallSAMLay,1,0);
+    idFloorEdt_SAM->setMaximum(theWall->numFloors);
+    idFloorEdt_SAM->setMinimum(1);
+    idFloorEdt_SAM->setValue(1); // default
+
+
+    connect(idFloorEdt_SAM, SIGNAL(valueChanged(int)), this, SLOT(idFloorEdt_valueChanged_SAM(int)));
+
+    wallSAMTab->setLayout(wallSAMLay);
+    tabWidget->addTab(wallSAMTab, "SAM");
+
+    getSAM();
+
+    createSAMui();
+    wallSAMLay->setRowStretch(wallSAMLay->rowCount(),1);
+
+
+    preprocess();
+
+
+
+
+
+
+
+
+    /*
+     * ---------------------------------------------------
+     *adding wall - end
+     * ---------------------------------------------------
+     */
+
     // add layout to tab
     tabWidget->addTab(elTab, "Element");
     tabWidget->addTab(sxnTab, "Section");
@@ -4409,6 +4519,669 @@ void MainWindow::createInputPanel()
     connect(matDefault, SIGNAL(stateChanged(int)), this, SLOT(matDefault_checked(int)));
     connect(matAsymm, SIGNAL(stateChanged(int)), this, SLOT(matAsymm_checked(int)));
     connect(connSymm, SIGNAL(stateChanged(int)), this, SLOT(connSymm_checked(int)));
+}
+
+// handle when user change the number of floors // adding wall
+void MainWindow::nofEdt_valueChanged(int nof)
+{
+    QString blank(tr(" "));
+    QString inch(tr("inch "));
+
+
+    //wallConfigLay->setRowStretch(wallConfigLay->rowCount(),2);
+
+}
+
+// handle when user change the current id of floor in BIM tab// adding wall
+void MainWindow::idFloorEdt_valueChanged_BIM(int inFloor)
+{
+    QString blank(tr(" "));
+    QString inch(tr("inch "));
+
+    //wallSAMLay->removeWidget(floorSAMs[inFloor]);
+    //delete floorSAMs[inFloor];
+    if (inFloor>0)
+    {
+        for (int i=0; i<numFloors; i++){
+            floorBIMs[i]->hide();
+        }
+        floorBIMs[inFloor-1]->show();
+
+        currentFloorIDbim = inFloor-1;
+    }
+}
+
+// handle when user change the current id of floor in BIM tab// adding wall
+void MainWindow::matSelectorBIM_valueChanged_BIM(int matID)
+{
+
+        for (int i=0; i<numMatsBIM; i++){
+            matBIMs[currentFloorIDbim][i]->hide();
+        }
+        matBIMs[currentFloorIDbim][matID]->show();
+}
+
+// handle when user change the current id of floor in SAM tab// adding wall
+void MainWindow::idFloorEdt_valueChanged_SAM(int inFloor)
+{
+
+
+    if (inFloor>0)
+    {
+        for (int i=0; i<numFloors; i++){
+            floorSAMs[i]->hide();
+        }
+        floorSAMs[inFloor-1]->show();
+    }
+
+
+
+}
+
+// create SAM   // adding wall
+void MainWindow::createSAM()
+{
+
+    QString bimFileName = expDirName + "/BIM.json";
+    QString samFileName = expDirName + "/SAM.json";
+
+    int nL = 5;
+    int nH = 5;
+
+    double beta = 0.5;
+    double An = 0.5;
+    double Ap = 0.5;
+    double Bn = 0.5;
+
+    char *filenameEVENT = 0;
+
+    theWall = new ConcreteShearWall();
+    theWall->initConcrete(beta, An, Ap, Bn);
+    theWall->readBIM(filenameEVENT, bimFileName.toStdString().c_str());
+    theWall->writeSAM(samFileName.toStdString().c_str(), nL, nH);
+
+    printf("SAM file created successfully. \n");
+
+}
+
+void MainWindow::preprocess()
+{
+    QString bimFileName = expDirName + "/BIM.json";
+    QString samFileName = expDirName + "/SAM.json";
+    QString evtFileName = expDirName + "/EVT.json";
+    QString edpFileName = expDirName + "/EDP.json";
+    QString tclFileName = expDirName + "/wall.tcl";
+
+    QByteArray bimFileName_ba = bimFileName.toLatin1();
+    QByteArray samFileName_ba = samFileName.toLatin1();
+    QByteArray evtFileName_ba = evtFileName.toLatin1();
+    QByteArray edpFileName_ba = edpFileName.toLatin1();
+    QByteArray tclFileName_ba = tclFileName.toLatin1();
+
+    char *filenameBIM = bimFileName_ba.data();
+    char *filenameSAM = samFileName_ba.data();
+    char *filenameEVENT = evtFileName_ba.data();
+    char *filenameEDP = edpFileName_ba.data();
+    char *filenameTCL = tclFileName_ba.data();
+
+
+
+    string ModelType = thePreprocessor->getModelType(filenameSAM);// continuum or beamcolumn?
+
+
+    if (!ModelType.compare("beamcolumn"))
+    {
+        std::cout << "Model type: " << ModelType << endl;
+        thePreprocessor->createInputFileBeamColumn(filenameBIM,
+                                                   filenameSAM,
+                                                   filenameEVENT,
+                                                   filenameEDP,
+                                                   filenameTCL);
+
+    }else if(!ModelType.compare("continuum")){
+        std::cout << "Model type: " << ModelType << endl;
+
+        thePreprocessor->createInputFile(filenameBIM,
+                                         filenameSAM,
+                                         filenameEVENT,
+                                         filenameEDP,
+                                         filenameTCL);
+
+    }else{
+        std::cout << "No matching model type." << endl;
+    }
+
+    delete thePreprocessor;
+}
+
+void MainWindow::getSAM()
+{
+    QString samFileName = expDirName + "/SAM.json";
+    QString in;
+    QFile inputFile(samFileName);
+    if(inputFile.open(QFile::ReadOnly)) {
+    //inputFile.open(QIODevice::ReadOnly | QIODevice::Text);
+    in = inputFile.readAll();
+    inputFile.close();
+    }else{
+
+    }
+
+    QJsonDocument indoc = QJsonDocument::fromJson(in.toUtf8());
+    //qWarning() << indoc.isNull();
+    if (indoc.isNull())
+    {
+        qWarning() << "SAM.json is missing.";
+    }
+    else{
+        samRoot = indoc.object();
+
+        SAM = samRoot["Structural Analysis Model"].toObject();
+        geometry = SAM["geometry"].toObject();
+        properties = SAM["properties"].toObject();
+        nodeMapping = SAM["nodeMapping"].toObject();
+        uniaxialMaterials = properties["uniaxialMaterials"].toArray();
+
+        ndMaterials = properties["ndMaterials"].toArray();
+
+    }
+
+}
+
+void MainWindow::createSAMui()
+{
+    // create SAM ui
+    QString blank(tr(" "));
+    QString inch(tr("inch "));
+
+    for(int i=0; i < numFloors; i++)
+    {
+        // steel01
+        // Steel01 (int tag, double fy, double E0, double b, double a1, double a2, double a3, double a4)
+        QGroupBox *floorBox = new QGroupBox("Assign material models to elements in Floor "+QString::number(i+1));
+        QGridLayout *floorLay = new QGridLayout();
+
+
+        // web
+        QGroupBox *webBox = new QGroupBox("Web ");
+        QGridLayout *webLay = new QGridLayout();
+
+
+        // rc
+        QGroupBox *RCWebBox = new QGroupBox("");
+        QGridLayout *RCWebLay = new QGridLayout();
+        ina1 = addDoubleSpin(tr("Layer 1 thickness"),&inch,RCWebLay,0,0);
+        ina1->setToolTip(tr(""));
+        QSpinBox *intSpinBox = addSpin(tr("Layer 1 mat id"),&blank,RCWebLay,1,0);
+        intSpinBox->setToolTip(tr("Concrete or Rebar"));
+
+        ina2 = addDoubleSpin(tr("Layer 2 thickness"),&inch,RCWebLay,2,0);
+        ina2->setToolTip(tr(""));
+        intSpinBox = addSpin(tr("Layer 2 mat id"),&blank,RCWebLay,3,0);
+        intSpinBox->setToolTip(tr("Concrete or Rebar"));
+
+        ina3 = addDoubleSpin(tr("Layer 3 thickness"),&inch,RCWebLay,4,0);
+        ina3->setToolTip(tr(""));
+        intSpinBox = addSpin(tr("Layer 3 mat id"),&blank,RCWebLay,5,0);
+        intSpinBox->setToolTip(tr("Concrete or Rebar"));
+
+        RCWebLay->setColumnStretch(1,1);
+        RCWebBox->setLayout(RCWebLay);
+
+        // concrete
+        QGroupBox *concreteWebBox = new QGroupBox("");
+        QGridLayout *concreteWebLay = new QGridLayout();
+        ina1 = addDoubleSpin(tr("xa1: "),&blank,concreteWebLay,0,0);
+        ina1->setToolTip(tr("Increase of compression yield envelope as proportion of yield strength after a "
+                            "plastic strain of (a2 * fy)/E"));
+        ina2 = addDoubleSpin(tr("a2: "),&blank,concreteWebLay,1,0);
+        ina2->setToolTip(tr("Compression plastic yield factor applied in a1"));
+        ina3 = addDoubleSpin(tr("a3: "),&blank,concreteWebLay,2,0);
+        ina3->setToolTip(tr("Increase of tension yield envelope as proportion of yield strength after a "
+                            "plastic strain of (a4 * fy)/E"));
+        ina4 = addDoubleSpin(tr("a4: "),&blank,concreteWebLay,3,0);
+        ina4->setToolTip(tr("Tension plastic yield factor applied in a3"));
+        concreteWebLay->setColumnStretch(1,1);
+        concreteWebBox->setLayout(concreteWebLay);
+
+        // rebar layout
+        QGroupBox *rebarWebBox = new QGroupBox("");
+        QGridLayout *rebarWebLay = new QGridLayout();
+        ina1 = addDoubleSpin(tr("xa1: "),&blank,rebarWebLay,0,0);
+        ina1->setToolTip(tr("Increase of compression yield envelope as proportion of yield strength after a "
+                            "plastic strain of (a2 * fy)/E"));
+        ina2 = addDoubleSpin(tr("a2: "),&blank,rebarWebLay,1,0);
+        ina2->setToolTip(tr("Compression plastic yield factor applied in a1"));
+        ina3 = addDoubleSpin(tr("a3: "),&blank,rebarWebLay,2,0);
+        ina3->setToolTip(tr("Increase of tension yield envelope as proportion of yield strength after a "
+                            "plastic strain of (a4 * fy)/E"));
+        ina4 = addDoubleSpin(tr("a4: "),&blank,rebarWebLay,3,0);
+        ina4->setToolTip(tr("Tension plastic yield factor applied in a3"));
+        rebarWebLay->setColumnStretch(1,1);
+        rebarWebBox->setLayout(rebarWebLay);
+
+
+        // steel
+        QGroupBox *steelWebBox = new QGroupBox("");
+        QGridLayout *steelWebLay = new QGridLayout();
+        steelTyeEdt = addLineEdit("Material model", "Steel01", steelWebLay,0,0);
+        steelTyeEdt->setToolTip(tr("Material model"));
+        steelEEdt.append(addDoubleSpin(tr("E"),&blank,steelWebLay,1,0));
+        steelEEdt[i]->setMaximum(1e20);steelEEdt[i]->setDecimals(6);
+        steelEEdt[i]->setToolTip(tr("Young's modulus"));
+        steelEEdt[i]->setValue(uniaxialMaterials[i].toObject()["E"].toDouble());
+        steelfyEdt.append(addDoubleSpin(tr("fy"),&blank,steelWebLay,2,0));
+        steelfyEdt[i]->setMaximum(1e20);steelfyEdt[i]->setDecimals(6);
+        steelfyEdt[i]->setToolTip(tr("Yield strength"));
+        steelfyEdt[i]->setValue(uniaxialMaterials[i].toObject()["fy"].toDouble());
+        steelbEdt.append(addDoubleSpin(tr("b"),&blank,steelWebLay,3,0));
+        steelbEdt[i]->setMaximum(1e20); steelbEdt[i]->setDecimals(6);
+        steelbEdt[i]->setToolTip(tr("hardening"));
+        //steelbEdt[i]->setValue(uniaxialMaterials[i].toObject()["b"].toDouble());
+
+
+
+
+        connect(steelEEdt[i], SIGNAL(valueChanged(double)), this, SLOT(steel_valueChanged_SAM(double)));
+        connect(steelfyEdt[i], SIGNAL(valueChanged(double)), this, SLOT(steel_valueChanged_SAM(double)));
+        connect(steelbEdt[i], SIGNAL(valueChanged(double)), this, SLOT(steel_valueChanged_SAM(double)));
+
+        steelWebLay->setColumnStretch(1,1);
+        steelWebBox->setLayout(steelWebLay);
+
+
+        // adding mat id selectors
+        matIDselector_rc.append(addSpin(tr("Reinforced concrete layout "),&blank,webLay,1,1));
+        matIDselector_rc[i]->setMaximum(theWall->numFloors);
+        matIDselector_rc[i]->setMinimum(1);
+        matIDselector_rc[i]->setValue(1); // default
+
+
+        matIDselector_concrete.append(addSpin(tr("Concrete model "),&blank,webLay,1,2));
+        matIDselector_concrete[i]->setMaximum(theWall->numFloors);
+        matIDselector_concrete[i]->setMinimum(1);
+        matIDselector_concrete[i]->setValue(1); // default
+
+
+        matIDselector_rebar.append(addSpin(tr("Rebar layout "),&blank,webLay,1,3));
+        matIDselector_rebar[i]->setMaximum(theWall->numFloors);
+        matIDselector_rebar[i]->setMinimum(1);
+        matIDselector_rebar[i]->setValue(1); // default
+
+
+        matIDselector_steel.append(addSpin(tr("Steel model "),&blank,webLay,1,4));
+        matIDselector_steel[i]->setMaximum(uniaxialMaterials.size());
+        matIDselector_steel[i]->setMinimum(1);
+        matIDselector_steel[i]->setValue(1); // default
+
+
+        webLay->addWidget(RCWebBox,2,1);
+        webLay->addWidget(concreteWebBox,2,2);
+        webLay->addWidget(rebarWebBox,2,3);
+        webLay->addWidget(steelWebBox,2,4);
+        webBox->setLayout(webLay);
+
+        webLay->setRowStretch(1,1);
+
+        connect(matIDselector_rc[i], SIGNAL(valueChanged(int)), this, SLOT(rcSelector_valueChanged_SAM(int)));
+        connect(matIDselector_concrete[i], SIGNAL(valueChanged(int)), this, SLOT(concreteSelector_valueChanged_SAM(int)));
+        connect(matIDselector_rebar[i], SIGNAL(valueChanged(int)), this, SLOT(rebarSelector_valueChanged_SAM(int)));
+        connect(matIDselector_steel[i], SIGNAL(valueChanged(int)), this, SLOT(steelSelector_valueChanged_SAM(int)));
+
+
+
+
+
+        // BE
+        QGroupBox *beBox = new QGroupBox("Boundary ");
+        QGridLayout *beLay = new QGridLayout();
+
+
+
+        QGroupBox *matBEBox = new QGroupBox("Boundary Material");
+        QGridLayout *matBELay = new QGridLayout();
+        ina1 = addDoubleSpin(tr("xa1: "),&blank,matBELay,0,0);
+        ina1->setToolTip(tr("Increase of compression yield envelope as proportion of yield strength after a "
+                            "plastic strain of (a2 * fy)/E"));
+        ina2 = addDoubleSpin(tr("a2: "),&blank,matBELay,1,0);
+        ina2->setToolTip(tr("Compression plastic yield factor applied in a1"));
+        ina3 = addDoubleSpin(tr("a3: "),&blank,matBELay,2,0);
+        ina3->setToolTip(tr("Increase of tension yield envelope as proportion of yield strength after a "
+                            "plastic strain of (a4 * fy)/E"));
+        ina4 = addDoubleSpin(tr("a4: "),&blank,matBELay,3,0);
+        ina4->setToolTip(tr("Tension plastic yield factor applied in a3"));
+        matBELay->setColumnStretch(1,1);
+        matBEBox->setLayout(matBELay);
+
+        QGroupBox *eleBEBox = new QGroupBox("Boundary Element");
+        QGridLayout *eleBELay = new QGridLayout();
+        ina1 = addDoubleSpin(tr("xa1: "),&blank,eleBELay,0,0);
+        ina1->setToolTip(tr("Increase of compression yield envelope as proportion of yield strength after a "
+                            "plastic strain of (a2 * fy)/E"));
+        ina2 = addDoubleSpin(tr("a2: "),&blank,eleBELay,1,0);
+        ina2->setToolTip(tr("Compression plastic yield factor applied in a1"));
+        ina3 = addDoubleSpin(tr("a3: "),&blank,eleBELay,2,0);
+        ina3->setToolTip(tr("Increase of tension yield envelope as proportion of yield strength after a "
+                            "plastic strain of (a4 * fy)/E"));
+        ina4 = addDoubleSpin(tr("a4: "),&blank,eleBELay,3,0);
+        ina4->setToolTip(tr("Tension plastic yield factor applied in a3"));
+        eleBELay->setColumnStretch(1,1);
+        eleBEBox->setLayout(eleBELay);
+
+
+
+        beLay->addWidget(matBEBox,1,1);
+        beLay->addWidget(eleBEBox,2,1);
+        beBox->setLayout(beLay);
+
+
+        floorLay->addWidget(webBox,1,1);
+        floorLay->addWidget(beBox,2,1);
+
+        floorLay->setColumnStretch(1,1);
+        floorBox->setLayout(floorLay);
+
+        floorLay->setRowStretch(0,1);
+
+        wallSAMLay->addWidget(floorBox,i+1+1,0,1,1);
+
+        floorSAMs.append(floorBox);
+    }
+
+    //wallSAMLay->setRowStretch(1,1);
+    //wallSAMLay->setRowStretch(2,1);
+
+    for (int i=1; i<numFloors; i++){
+        floorSAMs[i]->hide();
+    }
+    floorSAMs[0]->show();
+
+}
+
+void MainWindow::rc_valueChanged_SAM(double)
+{
+
+}
+void MainWindow::concrete_valueChanged_SAM(double){
+
+}
+void MainWindow::rebar_valueChanged_SAM(double)
+{
+
+}
+void MainWindow::steel_valueChanged_SAM(double value)
+{
+    int currentFloorID = idFloorEdt_SAM->value();
+    int currentSteelID =  matIDselector_steel[currentFloorID-1]->value();
+    QJsonObject steelTmpJ;
+    QJsonArray newuniaxialMaterials;
+    for (auto steelj : uniaxialMaterials)
+    {
+        int steelName = steelj.toObject()["name"].toInt();
+        QString steeltype = steelj.toObject()["type"].toString();
+        double E = steelj.toObject()["name"].toDouble();
+        double fy = steelj.toObject()["fy"].toDouble();
+        double b = steelj.toObject()["b"].toDouble();
+        if(currentSteelID == steelName)
+        {
+            steelTmpJ["name"] = steelName;
+            steelTmpJ["type"] = steeltype;
+            steelTmpJ["E"] = double(steelEEdt[currentFloorID-1]->value());
+            steelTmpJ["fy"] = steelfyEdt[currentFloorID-1]->value();
+            steelTmpJ["b"] = steelbEdt[currentFloorID-1]->value();
+            newuniaxialMaterials.append(steelTmpJ);
+        } else {
+            newuniaxialMaterials.append(steelj);
+        }
+    }
+    uniaxialMaterials = newuniaxialMaterials;
+
+    QString tmpfile = expDirName + "/tmpSAM.json";
+    QJsonDocument tmpDoc = QJsonDocument(uniaxialMaterials);
+    QJsonDocument tmpDoc_ND = QJsonDocument(ndMaterials);
+    QFile jsonFile(tmpfile);
+    jsonFile.open(QFile::WriteOnly);
+    jsonFile.write(tmpDoc.toJson());
+    jsonFile.write(tmpDoc_ND.toJson());
+    jsonFile.close();
+
+
+}
+
+void MainWindow::rcSelector_valueChanged_SAM(int rcID)
+{
+
+}
+void MainWindow::concreteSelector_valueChanged_SAM(int concreteID)
+{
+
+}
+void MainWindow::rebarSelector_valueChanged_SAM(int rebarID)
+{
+
+}
+void MainWindow::steelSelector_valueChanged_SAM(int steelID)
+{
+    int currentFloorID = idFloorEdt_SAM->value();
+
+    int steelName = uniaxialMaterials[steelID-1].toObject()["name"].toInt();
+
+    QString steeltype = uniaxialMaterials[steelID-1].toObject()["type"].toString();
+    double E = uniaxialMaterials[steelID-1].toObject()["E"].toDouble();
+    double fy = uniaxialMaterials[steelID-1].toObject()["fy"].toDouble();
+    double b = uniaxialMaterials[steelID-1].toObject()["b"].toDouble();
+
+    steelEEdt[currentFloorID-1]->setValue(E);
+    steelfyEdt[currentFloorID-1]->setValue(fy);
+    steelbEdt[currentFloorID-1]->setValue(b);
+
+
+}
+
+void MainWindow::createBIMui()
+{
+    // create SAM ui
+    QString blank(tr(" "));
+    QString inch(tr("inch "));
+
+    numMatsBIM = int(theWall->matsBIM.size());
+    map<string, ConcreteRectangularWallSection *>::iterator theWallSections_itr = theWall->theWallSections.begin();
+    for(int i=0; i < numFloors; i++)
+    {
+        // steel01
+        // Steel01 (int tag, double fy, double E0, double b, double a1, double a2, double a3, double a4)
+        QGroupBox *floorBox = new QGroupBox("Floor "+QString::number(i+1));
+
+        QGridLayout *floorLay = new QGridLayout();
+
+
+
+
+        // Geometry
+        QGroupBox *geoBox = new QGroupBox("Geometry ");
+        QGridLayout *geoLay = new QGridLayout();
+
+        ina1 = addDoubleSpin(tr("Length"),&inch,geoLay,0,0);
+        ina1->setToolTip(tr("Horizontal dimension"));
+        ina1->setValue(theWall->lengthofWall);
+        ina1->setDisabled(true);
+        ina2 = addDoubleSpin(tr("Height"),&inch,geoLay,1,0);
+        ina2->setToolTip(tr("Vertical dimension"));
+        ina2->setValue(theWall->floorHeights[i]);
+        ina2->setDisabled(true);
+        ina3 = addDoubleSpin(tr("Thickness"),&inch,geoLay,2,0);
+        ina3->setToolTip(tr(""));
+        ina3->setValue(theWall->theWallSections.begin()->second->thickness);
+        ina3->setDisabled(true);
+        ina4 = addDoubleSpin(tr("Boundary length"),&inch,geoLay,3,0);
+        ina4->setToolTip(tr(""));
+        ina4->setValue(theWall->theWallSections.begin()->second->be_length);
+        ina4->setDisabled(true);
+        geoLay->setColumnStretch(1,1);
+        geoBox->setLayout(geoLay);
+
+
+
+        // Material
+        QGroupBox *matBIMBox = new QGroupBox("Material");
+        QGridLayout *matBIMLay = new QGridLayout();
+
+
+        QStringList matNamesBIM;
+        for (int matIDBIM=0;matIDBIM<numMatsBIM;matIDBIM++)
+        {
+            matNamesBIM.append(QString::fromStdString(theWall->matsBIM[matIDBIM]["name"]));
+        }
+        matSelectorBIM.append( addCombo(tr("Material name: "),matNamesBIM,&blank,matBIMLay,0,0,1,2));
+        connect(matSelectorBIM[i], SIGNAL(currentIndexChanged(int)), this, SLOT(matSelectorBIM_valueChanged_BIM(int)));
+
+        // adding each material to a box ui
+        map<string, string>::iterator itr;
+        QVector<QGroupBox*> tmpVecBox;
+        for (int matIDBIM=0;matIDBIM<theWall->matsBIM.size();matIDBIM++)
+        {
+
+            QGroupBox *matBIMWebBox = new QGroupBox("");
+            QGridLayout *matBIMWebLay = new QGridLayout();
+            int vIDtmp = 0;
+            for (itr = theWall->matsBIM[matIDBIM].begin(); itr != theWall->matsBIM[matIDBIM].end(); ++itr) {
+                QLineEdit *expNameEdt = addLineEdit(QString::fromStdString(itr->first), QString::fromStdString(itr->second), matBIMWebLay,vIDtmp,0);
+                expNameEdt->setDisabled(true);
+                vIDtmp++;
+            }
+            matBIMWebBox->setLayout(matBIMWebLay);
+            tmpVecBox.append(matBIMWebBox);
+
+            matBIMLay->addWidget(matBIMWebBox,matIDBIM+1,1);
+        }
+        matBIMs.append(tmpVecBox);
+
+        for (int j=1; j<theWall->matsBIM.size(); j++){
+            matBIMs[i][j]->hide();
+        }
+        matBIMs[i][0]->show();
+
+
+
+
+
+
+
+        matBIMBox->setLayout(matBIMLay);
+
+
+        // Layout
+        QGroupBox *layoutBIMBox = new QGroupBox("Rebar layout ");
+        QGridLayout *layoutBIMLay = new QGridLayout();
+
+
+        QGroupBox *layoutBIMWebBox = new QGroupBox("Web layout");
+        QGridLayout *layoutBIMWebLay = new QGridLayout();
+
+        QGroupBox *layoutBIMWebBox_long = new QGroupBox("Longitudinal");
+        QGridLayout *layoutBIMWebLay_long = new QGridLayout();
+        map<string, string>::iterator itrInnertmp;
+        int vIDtmp=0;
+        for (itrInnertmp = theWallSections_itr->second->longitudinalRebar_map.begin(); itrInnertmp != theWallSections_itr->second->longitudinalRebar_map.end(); ++itrInnertmp) {
+            QLineEdit *expNameEdt = addLineEdit(QString::fromStdString(itrInnertmp->first), QString::fromStdString(itrInnertmp->second), layoutBIMWebLay_long,vIDtmp,0);
+            cout << itrInnertmp->first << endl;
+            expNameEdt->setDisabled(true);
+            vIDtmp++;
+        }
+        //theWallSections_itr++;
+        layoutBIMWebBox_long->setLayout(layoutBIMWebLay_long);
+
+
+
+        QGroupBox *layoutBIMWebBox_trans = new QGroupBox("Transverse");
+        QGridLayout *layoutBIMWebLay_trans = new QGridLayout();
+        vIDtmp=0;
+        for (itrInnertmp = theWallSections_itr->second->transverseRebar_map.begin(); itrInnertmp != theWallSections_itr->second->transverseRebar_map.end(); ++itrInnertmp) {
+            QLineEdit *expNameEdt = addLineEdit(QString::fromStdString(itrInnertmp->first), QString::fromStdString(itrInnertmp->second), layoutBIMWebLay_trans,vIDtmp,0);
+            cout << itrInnertmp->first << endl;
+            expNameEdt->setDisabled(true);
+            vIDtmp++;
+        }
+        //theWallSections_itr++;
+        layoutBIMWebBox_trans->setLayout(layoutBIMWebLay_trans);
+
+
+
+        layoutBIMWebLay->addWidget(layoutBIMWebBox_long,1,1);
+        layoutBIMWebLay->addWidget(layoutBIMWebBox_trans,1,2);
+
+
+
+        //layoutBIMWebLay->setColumnStretch(2,1);
+        layoutBIMWebBox->setLayout(layoutBIMWebLay);
+
+        QGroupBox *layoutBIMBEBox = new QGroupBox("Boundary layout");
+        QGridLayout *layoutBIMBELay = new QGridLayout();
+
+
+
+        QGroupBox *layoutBIMBEBox_long = new QGroupBox("Longitudinal");
+        QGridLayout *layoutBIMBELay_long = new QGridLayout();
+        vIDtmp=0;
+        for (itrInnertmp = theWallSections_itr->second->longitudinalRebar_map.begin(); itrInnertmp != theWallSections_itr->second->longitudinalRebar_map.end(); ++itrInnertmp) {
+            QLineEdit *expNameEdt = addLineEdit(QString::fromStdString(itrInnertmp->first), QString::fromStdString(itrInnertmp->second), layoutBIMBELay_long,vIDtmp,0);
+            cout << itrInnertmp->first << endl;
+            expNameEdt->setDisabled(true);
+            vIDtmp++;
+        }
+        //theWallSections_itr++;
+        layoutBIMBEBox_long->setLayout(layoutBIMBELay_long);
+
+
+
+        QGroupBox *layoutBIMBEBox_trans = new QGroupBox("Transverse");
+        QGridLayout *layoutBIMBELay_trans = new QGridLayout();
+        vIDtmp=0;
+        for (itrInnertmp = theWallSections_itr->second->transverseRebar_map.begin(); itrInnertmp != theWallSections_itr->second->transverseRebar_map.end(); ++itrInnertmp) {
+            QLineEdit *expNameEdt = addLineEdit(QString::fromStdString(itrInnertmp->first), QString::fromStdString(itrInnertmp->second), layoutBIMBELay_trans,vIDtmp,0);
+            cout << itrInnertmp->first << endl;
+            expNameEdt->setDisabled(true);
+            vIDtmp++;
+        }
+        //theWallSections_itr++;
+        layoutBIMBEBox_trans->setLayout(layoutBIMBELay_trans);
+
+
+
+        layoutBIMBELay->addWidget(layoutBIMBEBox_long,1,1);
+        layoutBIMBELay->addWidget(layoutBIMBEBox_trans,1,2);
+
+
+
+        layoutBIMBELay->setColumnStretch(2,1);
+        layoutBIMBEBox->setLayout(layoutBIMBELay);
+
+
+
+        layoutBIMLay->addWidget(layoutBIMWebBox,1,1);
+        layoutBIMLay->addWidget(layoutBIMBEBox,2,1);
+        layoutBIMBox->setLayout(layoutBIMLay);
+
+
+        floorLay->addWidget(geoBox,1,1);
+        floorLay->addWidget(matBIMBox,2,1);
+        floorLay->addWidget(layoutBIMBox,3,1);
+
+        floorLay->setColumnStretch(1,1);
+        floorBox->setLayout(floorLay);
+
+        wallBIMLay->addWidget(floorBox,i+3,0,1,1);
+
+        floorBIMs.append(floorBox);
+
+
+    }
+    for (int j=1; j<numFloors; j++){
+        floorBIMs[j]->hide();
+    }
+    floorBIMs[0]->show();
+
+
 }
 
 // output panel
@@ -4636,7 +5409,7 @@ QDoubleSpinBox *addDoubleSpin(QString text,QString *unitText,
     // width
     QRect rec = QApplication::desktop()->screenGeometry();
     //int height = 0.7*rec.height();
-    int width = 0.7*rec.width();
+    int width = 0.25*rec.width();
     res->setMinimumWidth(0.25*width/2);
 
     // layout
@@ -4660,6 +5433,41 @@ QDoubleSpinBox *addDoubleSpin(QString text,QString *unitText,
     return res;
 }
 
+
+
+
+
+QLineEdit *addLineEdit(QString labelText, QString text,
+                QGridLayout *gridLay,int row,int col, int nrow, int ncol)
+{
+    QHBoxLayout *Lay = new QHBoxLayout();
+    QLabel *Label = new QLabel(labelText);
+    QLineEdit *res = new QLineEdit();
+
+
+
+    // width
+    QRect rec = QApplication::desktop()->screenGeometry();
+    //int height = 0.7*rec.height();
+    int width = 0.35*rec.width();
+    res->setMinimumWidth(0.25*width/2);
+
+    res->setText(text);
+
+    // layout
+    Lay->addWidget(Label);
+    Lay->addStretch(0);
+    Lay->addWidget(res);
+
+
+    // main layout
+    Lay->setSpacing(2);
+    Lay->setMargin(0);
+    gridLay->addLayout(Lay,row,col,nrow,ncol);
+
+    return res;
+}
+
 // name(QLabel) + enter(QDoubleSpinBox) + units(QLabel)
 QSpinBox *addSpin(QString text, QString *unitText,
                   QGridLayout *gridLay,int row,int col, int nrow, int ncol)
@@ -4674,7 +5482,7 @@ QSpinBox *addSpin(QString text, QString *unitText,
     // width
     QRect rec = QApplication::desktop()->screenGeometry();
     //int height = 0.7*rec.height();
-    int width = 0.7*rec.width();
+    int width = 0.25*rec.width();
     res->setMinimumWidth(0.25*width/2);
 
     // layout
