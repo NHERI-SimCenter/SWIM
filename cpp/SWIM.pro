@@ -31,8 +31,11 @@ include(OPS_includes.pro)
 
 
 INCLUDEPATH += $$PWD/libtorch/include
+INCLUDEPATH += /usr/local/include
 LIBS += -L/Users/simcenter/Codes/SimCenter/SWIM/cpp/libtorch/lib
 LIBS += -ltorch -lc10
+LIBS += -L/usr/local/lib
+LIBS += -ljansson
 
 #win32: INCLUDES += "./ops"
 #win32: LIBS += -llapack -lblas
@@ -57,7 +60,9 @@ SOURCES += \
     deformwidget.cpp \
     hysteresiswidget.cpp \
     qcustomplot/qcustomplot.cpp \
-    ai.cpp
+    ai.cpp \
+    ConcreteShearWall.cpp \
+    OpenSeesTclBuilder.cpp
 
 HEADERS += \
     mainwindow.h \
@@ -68,7 +73,9 @@ HEADERS += \
     deformwidget.h \
     hysteresiswidget.h \
     qcustomplot/qcustomplot.h \
-    ai.h
+    ai.h \
+    ConcreteShearWall.h \
+    OpenSeesTclBuilder.h
 
 #FORMS += \
 #        mainwindow.ui

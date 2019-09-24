@@ -185,6 +185,10 @@ QDoubleSpinBox *addDoubleSpin(QString text,QString *unitText =0,
            QGridLayout *gridLay =0, int row =-1, int col =-1, int nrow =1, int ncol =1);
 QSpinBox *addSpin(QString text, QString *unitText =0,
            QGridLayout *gridLay =0, int row =-1, int col =-1, int nrow =1, int ncol =1);
+QLabel *addLabel(QString text,
+           QGridLayout *gridLay =0, int row =-1, int col =-1, int nrow =1, int ncol =1);
+QLineEdit *addLineEdit(QString text, QString labelText,
+           QGridLayout *gridLay =0, int row =-1, int col =-1, int nrow =1, int ncol =1);
 
 //---------------------------------------------------------------
 // structures
@@ -1137,7 +1141,21 @@ void MainWindow::loadFile(const QString &fileName)
     mFile.close();
 }
 
+void MainWindow::loadWallExperimentalFile(const QString &fileName)
+{
+    // open files
+    QFile mFile(fileName);
 
+    // open warning
+    if (!mFile.open(QFile::ReadOnly | QFile::Text)) {
+        QMessageBox::warning(this, tr("Application"),
+                tr("Cannot read file %1:\n%2.").arg(QDir::toNativeSeparators(fileName), mFile.errorString()));
+        return;
+    }
+
+    // close files
+    mFile.close();
+}
 
 
 // read experimental file
@@ -1806,6 +1824,7 @@ void MainWindow::in_conn2_currentIndexChanged(int row)
 void MainWindow::inExp_currentIndexChanged(int row) {
   if (row != -1) {
     loadExperimentalFile(inExp->itemData(row).toString());
+    loadWallExperimentalFile(inExp->itemData(row).toString()); // adding wall
   }
 }
 
@@ -3845,12 +3864,17 @@ void MainWindow::createInputPanel()
     QWidget *connTab = new QWidget;
     //QWidget *analyTab = new QWidget;
 
+
+
     // layouts
     inLay = new QVBoxLayout;
     QGridLayout *expLay = new QGridLayout();
     QGridLayout *elLay = new QGridLayout();
     QGridLayout *sxnLay = new QGridLayout();
     QGridLayout *matLay = new QGridLayout();
+
+
+
 
     // dynamic labels
     deltaL = new QLabel;
@@ -4300,6 +4324,110 @@ void MainWindow::createInputPanel()
     connTab->setLayout(connLay);
     connLay->setRowStretch(connLay->rowCount(),1);
 
+
+    /*
+     * ---------------------------------------------------
+     *adding wall - begin
+     * ---------------------------------------------------
+     */
+    createSAM();
+    numFloors = theWall->numFloors;
+
+    // BIM tab
+    QWidget *wallConfigTab = new QWidget;
+    wallBIMLay = new QGridLayout();
+
+
+    QLineEdit *expNameEdt = addLineEdit(tr("Experiment name: "), QString("my cool experiment"),wallBIMLay,0,0);
+    expNameEdt->setDisabled(true);
+
+    QSpinBox *nofEdt = addSpin(tr("Number of floors: "),&blank,wallBIMLay,1,0);
+    nofEdt->setValue(theWall->numFloors);
+    nofEdt->setDisabled(true);
+
+    idFloorEdt_BIM = addSpin(tr("Select floor: "),&blank,wallBIMLay,2,0);
+    idFloorEdt_BIM->setMinimum(1);
+    idFloorEdt_BIM->setMaximum(theWall->numFloors);
+    idFloorEdt_BIM->setValue(1);
+
+    createBIMui();
+
+    wallBIMLay->setRowStretch(wallBIMLay->rowCount(),1);
+
+    connect(nofEdt,SIGNAL(valueChanged(int)), this, SLOT(nofEdt_valueChanged(int)));
+    connect(idFloorEdt_BIM, SIGNAL(valueChanged(int)), this, SLOT(idFloorEdt_valueChanged_BIM(int)));
+
+    wallConfigTab->setLayout(wallBIMLay);
+    tabWidget->addTab(wallConfigTab, "Wall info");
+
+
+    // SAM tab
+    QWidget *wallSAMTab = new QWidget;
+    wallSAMLay = new QGridLayout();
+
+    QGroupBox *meshBox = new QGroupBox("Global Mesh Control");
+    QGridLayout *meshBoxLay = new QGridLayout();
+    eleSizeWebEdt = addDoubleSpin(tr("Web Element Size"),&inch,meshBoxLay,0,0);
+    eleSizeWebEdt->setToolTip(tr(""));
+    eleSizeWebEdt->setRange(0.0, 1e15);
+    eleSizeBEEdt = addDoubleSpin(tr("Boundary Element Size"),&inch,meshBoxLay,1,0);
+    eleSizeBEEdt->setToolTip(tr(""));
+    eleSizeBEEdt->setRange(0.0, 1e15);
+    meshBoxLay->setColumnStretch(1,1);
+    meshBoxLay->setRowStretch(1,1);
+    meshBox->setLayout(meshBoxLay);
+
+    wallSAMLay->addWidget(meshBox,0,0);
+
+
+    idFloorEdt_SAM = addSpin(tr("Select floor: "),&blank,wallSAMLay,2,0);
+    idFloorEdt_SAM->setMaximum(theWall->numFloors);
+    idFloorEdt_SAM->setMinimum(1);
+    idFloorEdt_SAM->setValue(1); // default
+
+
+    connect(idFloorEdt_SAM, SIGNAL(valueChanged(int)), this, SLOT(idFloorEdt_valueChanged_SAM(int)));
+
+    wallSAMTab->setLayout(wallSAMLay);
+    tabWidget->addTab(wallSAMTab, "SAM");
+
+    getSAM();
+
+    createSAMui();
+    wallSAMLay->setRowStretch(wallSAMLay->rowCount(),1);
+
+
+    preprocess(); // SAM->tcl
+
+
+    // AI predicts parameters and update the UI
+    std::vector<float> AIinputsVec = getAIinputs();
+    std::vector<float> predValues = ai.predict(AIinputsVec);// ['Ap','An', 'Bn', 'beta','N']
+    for(auto concreteIDtmp : matIDList_concrete)
+    {
+        matIDselector_concrete->setCurrentText(concreteIDtmp);
+        int cIDtmp = concreteIDtmp.toInt();
+        concreteApEdt[cIDtmp]->setValue(std::max(predValues[0],float(0.)));
+        concreteAnEdt[cIDtmp]->setValue(std::max(predValues[1],float(0.)));
+        concreteBnEdt[cIDtmp]->setValue(std::max(predValues[2],float(0.)));
+        concretebetaEdt[cIDtmp]->setValue(std::max(predValues[3],float(0.)));
+    }
+    int nL = std::max(int(predValues[3]),1);// number of elements along web length
+    eleSizeWebEdt->setValue(webLength/double(nL));
+    eleSizeBEEdt->setValue(beLength/2.0);// default mesh of boundary: 2 elements
+
+
+
+
+
+
+
+    /*
+     * ---------------------------------------------------
+     *adding wall - end
+     * ---------------------------------------------------
+     */
+
     // add layout to tab
     tabWidget->addTab(elTab, "Element");
     tabWidget->addTab(sxnTab, "Section");
@@ -4409,6 +4537,1058 @@ void MainWindow::createInputPanel()
     connect(matDefault, SIGNAL(stateChanged(int)), this, SLOT(matDefault_checked(int)));
     connect(matAsymm, SIGNAL(stateChanged(int)), this, SLOT(matAsymm_checked(int)));
     connect(connSymm, SIGNAL(stateChanged(int)), this, SLOT(connSymm_checked(int)));
+}
+
+// handle when user change the number of floors // adding wall
+void MainWindow::nofEdt_valueChanged(int nof)
+{
+    QString blank(tr(" "));
+    QString inch(tr("inch "));
+
+
+    //wallConfigLay->setRowStretch(wallConfigLay->rowCount(),2);
+
+}
+
+// handle when user change the current id of floor in BIM tab// adding wall
+void MainWindow::idFloorEdt_valueChanged_BIM(int inFloor)
+{
+    QString blank(tr(" "));
+    QString inch(tr("inch "));
+
+    //wallSAMLay->removeWidget(floorSAMs[inFloor]);
+    //delete floorSAMs[inFloor];
+    if (inFloor>0)
+    {
+        for (int i=0; i<numFloors; i++){
+            floorBIMs[i]->hide();
+        }
+        floorBIMs[inFloor-1]->show();
+
+        currentFloorIDbim = inFloor-1;
+    }
+}
+
+// handle when user change the current id of floor in BIM tab// adding wall
+void MainWindow::matSelectorBIM_valueChanged_BIM(int matID)
+{
+
+        for (int i=0; i<numMatsBIM; i++){
+            matBIMs[currentFloorIDbim][i]->hide();
+        }
+        matBIMs[currentFloorIDbim][matID]->show();
+}
+
+// handle when user change the current id of floor in SAM tab// adding wall
+void MainWindow::idFloorEdt_valueChanged_SAM(int inFloor)
+{
+
+    /*
+    if (inFloor>0)
+    {
+        for (int i=0; i<numFloors; i++){
+            floorSAMs[i]->hide();
+        }
+        floorSAMs[inFloor-1]->show();
+    }
+    */
+    for(int i=0; i<numFloors; i++)
+    {
+        webRCselector[i]->hide();
+        beRCselector[i]->hide();
+    }
+    webRCselector[inFloor-1]->show();
+    beRCselector[inFloor-1]->show();
+
+}
+
+// create SAM   // adding wall
+void MainWindow::createSAM()
+{
+
+    QString bimFileName = expDirName + "/BIM.json";
+    QString samFileName = expDirName + "/SAM.json";
+
+    int nL = 5;
+    int nH = 5;
+
+    double beta = 0.5;
+    double An = 0.5;
+    double Ap = 0.5;
+    double Bn = 0.5;
+
+    char *filenameEVENT = 0;
+
+    theWall = new ConcreteShearWall();
+    theWall->initConcrete(beta, An, Ap, Bn);
+    theWall->readBIM(filenameEVENT, bimFileName.toStdString().c_str());
+    theWall->writeSAM(samFileName.toStdString().c_str(), nL, nH);
+
+    printf("SAM file created successfully. \n");
+
+}
+
+void MainWindow::preprocess()
+{
+    QString bimFileName = expDirName + "/BIM.json";
+    QString samFileName = expDirName + "/SAM.json";
+    QString evtFileName = expDirName + "/EVT.json";
+    QString edpFileName = expDirName + "/EDP.json";
+    QString tclFileName = expDirName + "/wall.tcl";
+
+    QByteArray bimFileName_ba = bimFileName.toLatin1();
+    QByteArray samFileName_ba = samFileName.toLatin1();
+    QByteArray evtFileName_ba = evtFileName.toLatin1();
+    QByteArray edpFileName_ba = edpFileName.toLatin1();
+    QByteArray tclFileName_ba = tclFileName.toLatin1();
+
+    char *filenameBIM = bimFileName_ba.data();
+    char *filenameSAM = samFileName_ba.data();
+    char *filenameEVENT = evtFileName_ba.data();
+    char *filenameEDP = edpFileName_ba.data();
+    char *filenameTCL = tclFileName_ba.data();
+
+
+
+    string ModelType = thePreprocessor->getModelType(filenameSAM);// continuum or beamcolumn?
+
+
+    if (!ModelType.compare("beamcolumn"))
+    {
+        std::cout << "Model type: " << ModelType << endl;
+        thePreprocessor->createInputFileBeamColumn(filenameBIM,
+                                                   filenameSAM,
+                                                   filenameEVENT,
+                                                   filenameEDP,
+                                                   filenameTCL);
+
+    }else if(!ModelType.compare("continuum")){
+        std::cout << "Model type: " << ModelType << endl;
+
+        thePreprocessor->createInputFile(filenameBIM,
+                                         filenameSAM,
+                                         filenameEVENT,
+                                         filenameEDP,
+                                         filenameTCL);
+
+    }else{
+        std::cout << "No matching model type." << endl;
+    }
+
+    delete thePreprocessor;
+}
+
+void MainWindow::getSAM()
+{
+    QString samFileName = expDirName + "/SAM.json";
+    QString in;
+    QFile inputFile(samFileName);
+    if(inputFile.open(QFile::ReadOnly)) {
+    //inputFile.open(QIODevice::ReadOnly | QIODevice::Text);
+    in = inputFile.readAll();
+    inputFile.close();
+    }else{
+
+    }
+
+    QJsonDocument indoc = QJsonDocument::fromJson(in.toUtf8());
+    //qWarning() << indoc.isNull();
+    if (indoc.isNull())
+    {
+        qWarning() << "SAM.json is missing.";
+    }
+    else{
+        samRoot = indoc.object();
+
+        SAM = samRoot["Structural Analysis Model"].toObject();
+        geometry = SAM["geometry"].toObject();
+        properties = SAM["properties"].toObject();
+        nodeMapping = SAM["nodeMapping"].toObject();
+        uniaxialMaterials = properties["uniaxialMaterials"].toArray();
+
+
+        ndMaterials = properties["ndMaterials"].toArray();
+        for(auto ndmat : ndMaterials)
+        {
+            int matID = ndmat.toObject()["name"].toInt();
+            if(ndmat.toObject()["type"].toString()=="PlaneStressRebar")
+                rebarMaterials.insert(matID, ndmat.toObject());
+            if(ndmat.toObject()["type"].toString()=="Concrete")
+                concreteMaterials.insert(matID, ndmat.toObject());
+            if(ndmat.toObject()["type"].toString()=="LayeredConcrete")
+                rcMaterials.insert(matID, ndmat.toObject());
+        }
+    }
+
+}
+
+void MainWindow::createSAMui()
+{
+    // create SAM ui
+    QString blank(tr(" "));
+    QString inch(tr("inch "));
+
+
+    // steel01
+    // Steel01 (int tag, double fy, double E0, double b, double a1, double a2, double a3, double a4)
+    QGroupBox *floorBox = new QGroupBox("Assign materials models to wall components");
+    QGridLayout *floorLay = new QGridLayout();
+
+    // web
+    QGroupBox *webBox = new QGroupBox("Material models");
+    webLay = new QGridLayout();
+
+    // get rcMatStrList
+    QMapIterator<int, QJsonObject> i(rebarMaterials);
+    while (i.hasNext()) {
+        i.next();
+        QJsonObject rebarObj = i.value();
+        rcMatStrList.append(QString::number(rebarObj["name"].toInt()));
+    }
+    i = concreteMaterials;
+    while (i.hasNext()) {
+        i.next();
+        QJsonObject rebarObj = i.value();
+        rcMatStrList.append(QString::number(rebarObj["name"].toInt()));
+    }
+
+
+    // rc
+    //QMapIterator<int, QJsonObject> i(rcMaterials);
+    i = rcMaterials;
+    int rcJsonInd = 0;
+    while (i.hasNext()) {
+        i.next();
+        int rcID = i.key();
+
+
+        QGroupBox *RCWebBox = new QGroupBox("");
+        QGridLayout *RCWebLay = new QGridLayout();
+        QJsonObject theObj = i.value();
+
+        QStringList theList;
+        QJsonArray rclayersJson = theObj["layers"].toArray();
+        QVector<double> theTickness;
+        for (auto l : rclayersJson)
+        {
+            theList.append(QString::number(l.toObject()["material"].toInt()));
+            theTickness.append(l.toObject()["thickness"].toDouble());
+        }
+        matIDList_rc_mat1.insert(rcID, theList);
+
+
+        rct1Edt.insert(rcID, addDoubleSpin(tr("Layer 1 thickness"),&inch,RCWebLay,0,0));
+        rcMat1Edt.insert(rcID, addCombo(tr("Layer 1 mat id"),rcMatStrList,&blank,RCWebLay,1,0));
+        rct2Edt.insert(rcID, addDoubleSpin(tr("Layer 2 thickness"),&inch,RCWebLay,2,0));
+        rcMat2Edt.insert(rcID, addCombo(tr("Layer 2 mat id"),rcMatStrList,&blank,RCWebLay,3,0));
+        rct3Edt.insert(rcID, addDoubleSpin(tr("Layer 3 thickness"),&inch,RCWebLay,4,0));
+        rcMat3Edt.insert(rcID, addCombo(tr("Layer 3 mat id"),rcMatStrList,&blank,RCWebLay,5,0));
+
+        rct1Edt[rcID]->setRange(0.,1e15); rct1Edt[rcID]->setDecimals(6);
+        rct2Edt[rcID]->setRange(0.,1e15); rct2Edt[rcID]->setDecimals(6);
+        rct3Edt[rcID]->setRange(0.,1e15); rct3Edt[rcID]->setDecimals(6);
+
+        rct1Edt[rcID]->setValue(theTickness[0]);
+        rct2Edt[rcID]->setValue(theTickness[1]);
+        rct3Edt[rcID]->setValue(theTickness[2]);
+        rcMat1Edt[rcID]->setCurrentText(theList[0]);
+        rcMat2Edt[rcID]->setCurrentText(theList[1]);
+        rcMat3Edt[rcID]->setCurrentText(theList[2]);
+
+
+        RCWebLay->setColumnStretch(1,1);
+        RCWebBox->setLayout(RCWebLay);
+
+        connect(rct1Edt[rcID], SIGNAL(valueChanged(double)), this, SLOT(rc_valueChanged_SAM(double)));
+        connect(rct2Edt[rcID], SIGNAL(valueChanged(double)), this, SLOT(rc_valueChanged_SAM(double)));
+        connect(rct3Edt[rcID], SIGNAL(valueChanged(double)), this, SLOT(rc_valueChanged_SAM(double)));
+        connect(rcMat1Edt[rcID], SIGNAL(currentTextChanged(QString)), this, SLOT(rc_valueChanged_SAM(QString)));
+        connect(rcMat2Edt[rcID], SIGNAL(currentTextChanged(QString)), this, SLOT(rc_valueChanged_SAM(QString)));
+        connect(rcMat3Edt[rcID], SIGNAL(currentTextChanged(QString)), this, SLOT(rc_valueChanged_SAM(QString)));
+
+        rcBoxSAMs.insert(rcID, RCWebBox);
+
+        webLay->addWidget(RCWebBox,1,0, Qt::AlignTop);
+        webLay->setRowStretch(1,1);
+
+        RCWebBox->hide();
+        matIDList_rc.append(QString::number(rcID));
+
+        rcJsonInd++;
+
+    }
+    rcBoxSAMs.first()->show();
+
+
+
+
+    // concrete
+    //QMapIterator<int, QJsonObject> i(concreteMaterials);
+    i = concreteMaterials;
+    while (i.hasNext()) {
+        i.next();
+        int concreteID = i.key();
+
+
+        QGroupBox *concreteWebBox = new QGroupBox("");
+        QGridLayout *concreteWebLay = new QGridLayout();
+        QJsonObject rebarObj = i.value();
+
+        concreteEEdt.insert(concreteID, addDoubleSpin(tr("E"),&blank,concreteWebLay,0,0));
+        concretefpcEdt.insert(concreteID, addDoubleSpin(tr("fpc"),&blank,concreteWebLay,1,0));
+        concretenuEdt.insert(concreteID, addDoubleSpin(tr("nu"),&blank,concreteWebLay,2,0));
+        concretebetaEdt.insert(concreteID, addDoubleSpin(tr("beta"),&blank,concreteWebLay,3,0));
+        concreteApEdt.insert(concreteID, addDoubleSpin(tr("Ap"),&blank,concreteWebLay,4,0));
+        concreteAnEdt.insert(concreteID, addDoubleSpin(tr("An"),&blank,concreteWebLay,5,0));
+        concreteBnEdt.insert(concreteID, addDoubleSpin(tr("Bn"),&blank,concreteWebLay,6,0));
+
+        concreteEEdt[concreteID]->setRange(0.,1e15); concreteEEdt[concreteID]->setDecimals(6);
+        concretefpcEdt[concreteID]->setRange(0.,1e15); concretefpcEdt[concreteID]->setDecimals(6);
+        concretenuEdt[concreteID]->setRange(0.,1e15); concretenuEdt[concreteID]->setDecimals(6);
+        concretebetaEdt[concreteID]->setRange(0.,1e15); concretebetaEdt[concreteID]->setDecimals(6);
+        concreteApEdt[concreteID]->setRange(0.,1e15); concreteApEdt[concreteID]->setDecimals(6);
+        concreteAnEdt[concreteID]->setRange(0.,1e15); concreteAnEdt[concreteID]->setDecimals(6);
+        concreteBnEdt[concreteID]->setRange(0.,1e15); concreteBnEdt[concreteID]->setDecimals(6);
+
+        concreteEEdt[concreteID]->setValue(rebarObj["E"].toDouble());
+        concretefpcEdt[concreteID]->setValue(rebarObj["fpc"].toDouble());
+        concretenuEdt[concreteID]->setValue(rebarObj["nu"].toDouble());
+        concretebetaEdt[concreteID]->setValue(rebarObj["beta"].toDouble());
+        concreteApEdt[concreteID]->setValue(rebarObj["Ap"].toDouble());
+        concreteAnEdt[concreteID]->setValue(rebarObj["An"].toDouble());
+        concreteBnEdt[concreteID]->setValue(rebarObj["Bn"].toDouble());
+
+        concreteWebLay->setColumnStretch(1,1);
+        concreteWebBox->setLayout(concreteWebLay);
+
+
+
+
+        connect(concreteEEdt[concreteID], SIGNAL(valueChanged(double)), this, SLOT(concrete_valueChanged_SAM(double)));
+        connect(concretefpcEdt[concreteID], SIGNAL(valueChanged(double)), this, SLOT(concrete_valueChanged_SAM(double)));
+        connect(concretenuEdt[concreteID], SIGNAL(valueChanged(double)), this, SLOT(concrete_valueChanged_SAM(double)));
+        connect(concretebetaEdt[concreteID], SIGNAL(valueChanged(double)), this, SLOT(concrete_valueChanged_SAM(double)));
+        connect(concreteApEdt[concreteID], SIGNAL(valueChanged(double)), this, SLOT(concrete_valueChanged_SAM(double)));
+        connect(concreteAnEdt[concreteID], SIGNAL(valueChanged(double)), this, SLOT(concrete_valueChanged_SAM(double)));
+        connect(concreteBnEdt[concreteID], SIGNAL(valueChanged(double)), this, SLOT(concrete_valueChanged_SAM(double)));
+
+        concreteBoxSAMs.insert(concreteID, concreteWebBox);
+
+        webLay->addWidget(concreteWebBox,1,1, Qt::AlignTop);
+        webLay->setRowStretch(1,1);
+
+
+        concreteWebBox->hide();
+        matIDList_concrete.append(QString::number(concreteID));
+
+    }
+    concreteBoxSAMs.first()->show();
+
+    // rebar layout
+    //QMapIterator<int, QJsonObject> i(rebarMaterials);
+    // steel
+    i = rebarMaterials;
+    QStringList matIDList_rebar_steel;
+    while (i.hasNext()) {
+        i.next();
+        int rebarID = i.key();
+        matIDList_rebar_steel.append(QString::number(rebarMaterials[rebarID]["material"].toInt()));
+    }
+    i = rebarMaterials;
+    while (i.hasNext()) {
+        i.next();
+        int rebarID = i.key();
+        QGroupBox *rebarWebBox = new QGroupBox("");
+        QGridLayout *rebarWebLay = new QGridLayout();
+        QJsonObject rebarObj = i.value();
+        rebarSteelMatEdt.insert(rebarID, addCombo(tr("Steel model"),matIDList_rebar_steel,&blank,rebarWebLay,0,0));
+        rebarAngEdt.insert(rebarID, addDoubleSpin(tr("Rebar angle"),&blank,rebarWebLay,1,0));
+        rebarAngEdt[rebarID]->setRange(0.0, 1e15);
+        rebarAngEdt[rebarID]->setDecimals(2);
+
+        rebarSteelMatEdt[rebarID]->setCurrentText(QString::number(rebarMaterials[rebarID]["material"].toInt()));
+        rebarAngEdt[rebarID]->setValue(rebarMaterials[rebarID]["angle"].toDouble());
+
+        rebarWebLay->setColumnStretch(1,1);
+        rebarWebBox->setLayout(rebarWebLay);
+
+        connect(rebarSteelMatEdt[rebarID], SIGNAL(currentTextChanged(QString)), this, SLOT(rebar_valueChanged_SAM(QString)));
+        connect(rebarAngEdt[rebarID], SIGNAL(valueChanged(double)), this, SLOT(rebar_valueChanged_SAM(double)));
+
+        rebarBoxSAMs.insert(rebarID, rebarWebBox);
+
+        webLay->addWidget(rebarWebBox,1,2, Qt::AlignTop);
+        webLay->setRowStretch(1,1);
+
+        rebarWebBox->hide();
+        matIDList_rebar.append(QString::number(rebarID));
+
+    }
+    rebarBoxSAMs.first()->show();
+
+
+
+    // steel
+    for (int i=0; i < uniaxialMaterials.size(); i++)
+    {
+        /*
+        int steelName = uniaxialMaterials[i].toObject()["name"].toInt();
+        QString steeltype = uniaxialMaterials[i].toObject()["type"].toString();
+        double E = uniaxialMaterials[i].toObject()["name"].toDouble();
+        double fy = uniaxialMaterials[i].toObject()["fy"].toDouble();
+        double b = uniaxialMaterials[i].toObject()["b"].toDouble();
+        */
+
+        QGroupBox *steelWebBox = new QGroupBox("");
+        QGridLayout *steelWebLay = new QGridLayout();
+        steelTyeEdt.append(addCombo("Material model", steelModelTypes,&blank, steelWebLay,0,0));
+        steelTyeEdt[i]->setToolTip(tr("Material model"));
+        steelEEdt.append(addDoubleSpin(tr("E"),&blank,steelWebLay,1,0));
+        steelEEdt[i]->setMaximum(1e20);steelEEdt[i]->setDecimals(6);
+        steelEEdt[i]->setToolTip(tr("Young's modulus"));
+        steelEEdt[i]->setValue(uniaxialMaterials[i].toObject()["E"].toDouble());
+        steelfyEdt.append(addDoubleSpin(tr("fy"),&blank,steelWebLay,2,0));
+        steelfyEdt[i]->setMaximum(1e20);steelfyEdt[i]->setDecimals(6);
+        steelfyEdt[i]->setToolTip(tr("Yield strength"));
+        double aa= uniaxialMaterials[i].toObject()["fy"].toDouble();
+        steelfyEdt[i]->setValue(uniaxialMaterials[i].toObject()["fy"].toDouble());
+        steelbEdt.append(addDoubleSpin(tr("b"),&blank,steelWebLay,3,0));
+        steelbEdt[i]->setMaximum(1e20); steelbEdt[i]->setDecimals(6);
+        steelbEdt[i]->setToolTip(tr("hardening"));
+        steelbEdt[i]->setValue(uniaxialMaterials[i].toObject()["b"].toDouble());
+
+        connect(steelEEdt[i], SIGNAL(valueChanged(double)), this, SLOT(steel_valueChanged_SAM(double)));
+        connect(steelfyEdt[i], SIGNAL(valueChanged(double)), this, SLOT(steel_valueChanged_SAM(double)));
+        connect(steelbEdt[i], SIGNAL(valueChanged(double)), this, SLOT(steel_valueChanged_SAM(double)));
+
+        steelWebLay->setRowStretch(i,1);
+        steelWebLay->setColumnStretch(0,1);
+        steelWebBox->setLayout(steelWebLay);
+
+        steelBoxSAMs.append(steelWebBox);
+
+        webLay->addWidget(steelWebBox,1,3, Qt::AlignTop);
+        webLay->setRowStretch(1+i,1);
+
+        steelWebBox->hide();
+        matIDList_steel.append(QString::number(i+1));
+    }
+    steelBoxSAMs[0]->show();
+
+
+
+
+
+    // adding mat id selectors
+    matIDselector_rc = addCombo(tr("Reinforced concrete layout "),matIDList_rc,&blank,webLay,0,0);
+    matIDselector_concrete = addCombo(tr("Concrete model "),matIDList_concrete,&blank,webLay,0,1);
+    matIDselector_rebar = addCombo(tr("Rebar layout "),matIDList_rebar,&blank,webLay,0,2);
+    matIDselector_steel = addCombo(tr("Steel model "),matIDList_steel,&blank,webLay,0,3);
+
+
+
+
+
+
+
+    webBox->setLayout(webLay);
+
+    webLay->setColumnStretch(0,1);
+    webLay->setColumnStretch(1,1);
+    webLay->setColumnStretch(2,1);
+    webLay->setColumnStretch(3,1);
+
+    connect(matIDselector_rc, SIGNAL(currentTextChanged(QString)), this, SLOT(rcSelector_valueChanged_SAM(QString)));
+    connect(matIDselector_concrete, SIGNAL(currentTextChanged(QString)), this, SLOT(concreteSelector_valueChanged_SAM(QString)));
+    connect(matIDselector_rebar, SIGNAL(currentTextChanged(QString)), this, SLOT(rebarSelector_valueChanged_SAM(QString)));
+    connect(matIDselector_steel, SIGNAL(currentTextChanged(QString)), this, SLOT(steelSelector_valueChanged_SAM(QString)));
+
+
+
+    // Web add material
+    for (int j=0; j< numFloors; j++)
+    {
+        webRCselector.append(addCombo(tr("Reinforced concrete layout for web"),matIDList_rc,&blank,floorLay,0,0));
+        beRCselector.append(addCombo(tr("Reinforced concrete layout for boundary"),matIDList_rc,&blank,floorLay,1,0));
+        webRCselector[j]->setCurrentText(matIDList_rc[0+2*j]);
+        beRCselector[j]->setCurrentText(matIDList_rc[1+2*j]);
+        webRCselector[j]->setEditable(true);
+        beRCselector[j]->setEditable(true);
+        webRCselector[j]->hide();
+        beRCselector[j]->hide();
+        connect(webRCselector[j], SIGNAL(currentTextChanged(QString)), this, SLOT(webRCselector_valueChanged_SAM(QString)));
+        connect(beRCselector[j], SIGNAL(currentTextChanged(QString)), this, SLOT(beRCselector_valueChanged_SAM(QString)));
+    }
+    webRCselector[0]->show();
+    beRCselector[0]->show();
+
+
+
+
+
+
+    //floorLay->addWidget(webBox,1,1, Qt::AlignTop);
+    wallSAMLay->addWidget(webBox,1,0, Qt::AlignTop);
+
+
+
+    floorLay->setRowStretch(0,1);
+    floorLay->setRowStretch(1,1);
+    floorLay->setRowStretch(2,1);
+    floorLay->setRowStretch(3,1);
+    floorBox->setLayout(floorLay);
+
+
+
+    wallSAMLay->addWidget(floorBox,1+1+1,0,1,1);
+
+    floorSAMs.append(floorBox);
+
+
+    //wallSAMLay->setRowStretch(1,1);
+    //wallSAMLay->setRowStretch(2,1);
+
+    /*
+    for (int i=1; i<numFloors; i++){
+        floorSAMs[i]->hide();
+    }
+    floorSAMs[0]->show();
+    */
+
+}
+
+std::vector<float> MainWindow::getAIinputs()
+{
+    //['height', 'length', 'thickness', 'E', 'fc']
+    float wallLength = float(theWall->lengthofWall);
+    float wallHeight = float(theWall->heightofWall);
+    float wallThick = float(theWall->theWallSections.begin()->second->thickness);
+    float E_Concrete = float(theWall->E_Concrete);
+    float fc_Concrete = float(theWall->fc_Concrete);
+    std::vector<float> AIinputsVec{wallLength,wallHeight, wallThick, E_Concrete, fc_Concrete};
+    return AIinputsVec;
+}
+
+void MainWindow::webRCselector_valueChanged_SAM(QString)
+{
+    assemble_valueChanged_SAM();
+}
+void MainWindow::beRCselector_valueChanged_SAM(QString)
+{
+    assemble_valueChanged_SAM();
+}
+void MainWindow::assemble_valueChanged_SAM()
+{
+    //int currentFloorID = idFloorEdt_SAM->value();
+}
+
+void MainWindow::showRebar()
+{
+
+    //rebarBoxSAMs[1]->hide();
+    rebarBoxSAMs[2]->hide();
+    rebarBoxSAMs[3]->hide();
+
+    QMap<int, QGroupBox*> rcBoxSAMs;
+
+
+
+
+}
+
+void MainWindow::showSteel()
+{
+    /*
+    for (int i=0; i<steelBoxSAMs.size(); i++){
+        steelBoxSAMs[i]->hide();
+    }
+    if(matIDselector_steel->value()>-1)
+        steelBoxSAMs[matIDselector_steel->value()-1]->show();
+    else
+        steelBoxSAMs[0]->show();
+     */
+}
+void MainWindow::showSteel(int steelID)
+{
+    for (int i=0; i<steelBoxSAMs.size(); i++){
+        steelBoxSAMs[i]->hide();
+    }
+    if(steelID>-1)
+        steelBoxSAMs[steelID-1]->show();
+    else
+        steelBoxSAMs[0]->show();
+}
+
+void MainWindow::rc_valueChanged_SAM(double)
+{
+    rc_valueChanged_SAM();
+}
+void MainWindow::rc_valueChanged_SAM(QString)
+{
+    rc_valueChanged_SAM();
+}
+void MainWindow::rc_valueChanged_SAM()
+{
+    int currentrcID =  matIDselector_rc->currentText().toInt();
+
+    QJsonObject rcTmpJ;
+    QJsonObject rcTmpJLayer;
+
+    for (auto rcj : rcMaterials)
+    {
+        int rcName = rcj["name"].toInt();
+        QString rctype = rcj["type"].toString();
+
+        if(currentrcID == rcName)
+        {
+            rcj["name"] = rcName;
+            rcj["type"] = rctype;
+
+            QJsonArray rcTmpJArray;
+            rcTmpJLayer["thickness"] = rct1Edt[currentrcID]->value();
+            rcTmpJLayer["material"] = rcMat1Edt[currentrcID]->currentText().toInt();
+            rcTmpJArray.append(rcTmpJLayer);
+            rcTmpJLayer["thickness"] = rct2Edt[currentrcID]->value();
+            rcTmpJLayer["material"] = rcMat2Edt[currentrcID]->currentText().toInt();
+            rcTmpJArray.append(rcTmpJLayer);
+            rcTmpJLayer["thickness"] = rct3Edt[currentrcID]->value();
+            rcTmpJLayer["material"] = rcMat3Edt[currentrcID]->currentText().toInt();
+            rcTmpJArray.append(rcTmpJLayer);
+
+            rcj["layers"] = rcTmpJArray;
+
+            rcMaterials[rcName] = rcj;
+        }
+    }
+
+    // write out for testing
+    QString tmpfile = expDirName + "/rc_SAM_debug.json";
+    QFile jsonFile(tmpfile);
+    jsonFile.open(QFile::WriteOnly);
+    for (auto rcj : rcMaterials)
+    {
+        QJsonDocument tmpDoc = QJsonDocument(rcj);
+        jsonFile.write(tmpDoc.toJson());
+    }
+    jsonFile.close();
+
+}
+
+
+void MainWindow::concrete_valueChanged_SAM(double){
+    int currentConcreteID =  matIDselector_concrete->currentText().toInt();
+
+    QJsonObject concreteTmpJ;
+    for (auto concretej : concreteMaterials)
+    {
+        int concreteName = concretej["name"].toInt();
+        QString concretetype = concretej["type"].toString();
+        int Etmp = concretej["E"].toInt();
+        double fpctmp = concretej["fpc"].toDouble();
+        if(currentConcreteID == concreteName)
+        {
+            concretej["name"] = concreteName;
+            concretej["type"] = concretetype;
+            concretej["E"] = concreteEEdt[currentConcreteID]->value();
+            concretej["fpc"] = concretefpcEdt[currentConcreteID]->value();
+            concretej["nu"] = concretenuEdt[currentConcreteID]->value();
+            concretej["beta"] = concretebetaEdt[currentConcreteID]->value();
+            concretej["Ap"] = concreteApEdt[currentConcreteID]->value();
+            concretej["An"] = concreteAnEdt[currentConcreteID]->value();
+            concretej["Bn"] = concreteBnEdt[currentConcreteID]->value();
+
+            concreteMaterials[concreteName] = concretej;
+        }
+    }
+
+    // write out for testing
+    QString tmpfile = expDirName + "/concrete_SAM_debug.json";
+    QFile jsonFile(tmpfile);
+    jsonFile.open(QFile::WriteOnly);
+    for (auto concretej : concreteMaterials)
+    {
+        QJsonDocument tmpDoc = QJsonDocument(concretej);
+        jsonFile.write(tmpDoc.toJson());
+    }
+    jsonFile.close();
+
+}
+void MainWindow::rebar_valueChanged_SAM()
+{
+
+    // when steel panel is edited, update the obj uniaxialMaterials
+    int currentFloorID = idFloorEdt_SAM->value();
+    int currentRebarID =  matIDselector_rebar->currentText().toInt();
+    QJsonObject rebarTmpJ;
+    for (auto rebarj : rebarMaterials)
+    {
+        int rebarName = rebarj["name"].toInt();
+        QString rebartype = rebarj["type"].toString();
+        int steelIDtmp = rebarj["material"].toInt();
+        double angletmp = rebarj["angle"].toDouble();
+        if(currentRebarID == rebarName)
+        {
+            rebarTmpJ["name"] = rebarName;
+            rebarTmpJ["type"] = rebartype;
+            rebarTmpJ["angle"] = rebarAngEdt[currentRebarID]->value();
+            rebarTmpJ["material"] = rebarSteelMatEdt[currentRebarID]->currentText().toInt();
+            rebarMaterials[rebarName] = rebarTmpJ;
+        }
+    }
+
+    // write out for testing
+    QString tmpfile = expDirName + "/rebar_SAM_debug.json";
+    QFile jsonFile(tmpfile);
+    jsonFile.open(QFile::WriteOnly);
+    for (auto rebarj : rebarMaterials)
+    {
+        QJsonDocument tmpDoc = QJsonDocument(rebarj);
+        jsonFile.write(tmpDoc.toJson());
+    }
+    jsonFile.close();
+
+}
+void MainWindow::rebar_valueChanged_SAM(double)
+{
+    rebar_valueChanged_SAM();
+}
+void MainWindow::rebar_valueChanged_SAM(QString)
+{
+    rebar_valueChanged_SAM();
+}
+
+
+// when use edit steel properties
+void MainWindow::steel_valueChanged_SAM(double value)
+{
+
+    // when steel panel is edited, update the obj uniaxialMaterials
+    //int currentFloorID = idFloorEdt_SAM->value();
+    int currentSteelID = matIDselector_steel->currentText().toInt();//  matIDselector_steel[currentFloorID-1].currentText().toInt();
+    QJsonObject steelTmpJ;
+    QJsonArray newuniaxialMaterials;
+    for (auto steelj : uniaxialMaterials)
+    {
+        int steelName = steelj.toObject()["name"].toInt();
+        QString steeltype = steelj.toObject()["type"].toString();
+        double E = steelj.toObject()["E"].toDouble();
+        double fy = steelj.toObject()["fy"].toDouble();
+        double b = steelj.toObject()["b"].toDouble();
+        if(currentSteelID == steelName)
+        {
+            steelTmpJ["name"] = steelName;
+            steelTmpJ["type"] = steeltype;
+            steelTmpJ["E"] = double(steelEEdt[currentSteelID-1]->value());
+            steelTmpJ["fy"] = steelfyEdt[currentSteelID-1]->value();
+            steelTmpJ["b"] = steelbEdt[currentSteelID-1]->value();
+            newuniaxialMaterials.append(steelTmpJ);
+        } else {
+            newuniaxialMaterials.append(steelj);
+        }
+    }
+    uniaxialMaterials = newuniaxialMaterials;
+
+    // write out for debug
+    QString tmpfile = expDirName + "/tmpSAM.json";
+    QJsonDocument tmpDoc = QJsonDocument(uniaxialMaterials);
+    QJsonDocument tmpDoc_ND = QJsonDocument(ndMaterials);
+    QFile jsonFile(tmpfile);
+    jsonFile.open(QFile::WriteOnly);
+    jsonFile.write(tmpDoc.toJson());
+    jsonFile.write(tmpDoc_ND.toJson());
+    jsonFile.close();
+
+}
+
+void MainWindow::rcSelector_valueChanged_SAM(QString rcID)
+{
+    int thisrcID = rcID.toInt();
+
+    QMapIterator<int, QGroupBox*> i(rcBoxSAMs);
+    while (i.hasNext()) {
+        i.next();
+        i.value()->hide();
+    }
+
+    rcBoxSAMs[thisrcID]->show();
+
+}
+void MainWindow::concreteSelector_valueChanged_SAM(QString concreteID)
+{
+    int thisConcreteID = concreteID.toInt();
+
+    QMapIterator<int, QGroupBox*> i(concreteBoxSAMs);
+    while (i.hasNext()) {
+        i.next();
+        i.value()->hide();
+    }
+
+    concreteBoxSAMs[thisConcreteID]->show();
+
+}
+void MainWindow::rebarSelector_valueChanged_SAM(QString rebarID)
+{
+    int thisRebarID = rebarID.toInt();
+
+    QMapIterator<int, QGroupBox*> i(rebarBoxSAMs);
+    while (i.hasNext()) {
+        i.next();
+        i.value()->hide();
+
+    }
+
+    rebarBoxSAMs[thisRebarID]->show();
+
+}
+void MainWindow::steelSelector_valueChanged_SAM(QString steelIDStr)
+{
+    /*
+    int currentFloorID = idFloorEdt_SAM->value();
+
+    int steelName = uniaxialMaterials[steelID-1].toObject()["name"].toInt();
+
+    QString steeltype = uniaxialMaterials[steelID-1].toObject()["type"].toString();
+    double E = uniaxialMaterials[steelID-1].toObject()["E"].toDouble();
+    double fy = uniaxialMaterials[steelID-1].toObject()["fy"].toDouble();
+    double b = uniaxialMaterials[steelID-1].toObject()["b"].toDouble();
+
+    steelEEdt[steelID-1]->setValue(E);
+    steelfyEdt[steelID-1]->setValue(fy);
+    steelbEdt[steelID-1]->setValue(b);
+    */
+
+    int steelID = steelIDStr.toInt();
+
+    //steelBoxSAMs[i]->hide();
+    if (steelID>0)
+    {
+        for (int i=0; i<steelBoxSAMs.size(); i++)
+        {
+            if(fabs((steelID-1)-i)>0.1 )
+                steelBoxSAMs[i]->hide();
+            else
+                steelBoxSAMs[i]->show();
+        }
+    }
+    else
+    {
+        for (int i=0; i<steelBoxSAMs.size(); i++){
+            steelBoxSAMs[i]->hide();}
+        steelBoxSAMs[0]->show();
+    }
+
+
+}
+
+void MainWindow::createBIMui()
+{
+    // create SAM ui
+    QString blank(tr(" "));
+    QString inch(tr("inch "));
+
+    numMatsBIM = int(theWall->matsBIM.size());
+    map<string, ConcreteRectangularWallSection *>::iterator theWallSections_itr = theWall->theWallSections.begin();
+    for(int i=0; i < numFloors; i++)
+    {
+        // steel01
+        // Steel01 (int tag, double fy, double E0, double b, double a1, double a2, double a3, double a4)
+        QGroupBox *floorBox = new QGroupBox("Floor "+QString::number(i+1));
+
+        QGridLayout *floorLay = new QGridLayout();
+
+
+
+
+        // Geometry
+        QGroupBox *geoBox = new QGroupBox("Geometry ");
+        QGridLayout *geoLay = new QGridLayout();
+
+        QDoubleSpinBox *wallLenghtEdt = addDoubleSpin(tr("Length"),&inch,geoLay,0,0);
+        wallLenghtEdt->setToolTip(tr("Horizontal dimension"));
+        wallLenghtEdt->setValue(theWall->lengthofWall);
+        wallLenghtEdt->setDisabled(true);
+        QDoubleSpinBox *wallHeightEdt = addDoubleSpin(tr("Height"),&inch,geoLay,1,0);
+        wallHeightEdt->setToolTip(tr("Vertical dimension"));
+        wallHeightEdt->setValue(theWall->floorHeights[i]);
+        wallHeightEdt->setDisabled(true);
+        QDoubleSpinBox *wallThicknessEdt = addDoubleSpin(tr("Thickness"),&inch,geoLay,2,0);
+        wallThicknessEdt->setToolTip(tr(""));
+        wallThicknessEdt->setValue(theWall->theWallSections.begin()->second->thickness);
+        wallThicknessEdt->setDisabled(true);
+        QDoubleSpinBox *wallbelengEdt = addDoubleSpin(tr("Boundary length"),&inch,geoLay,3,0);
+        wallbelengEdt->setToolTip(tr(""));
+        wallbelengEdt->setValue(theWall->theWallSections.begin()->second->be_length);
+        wallbelengEdt->setDisabled(true);
+        geoLay->setColumnStretch(1,1);
+        geoBox->setLayout(geoLay);
+
+        wallLength = wallLenghtEdt->value();
+        beLength = wallbelengEdt->value();
+        webLength = wallLength-beLength*2.0;
+
+
+
+
+        // Material
+        QGroupBox *matBIMBox = new QGroupBox("Material");
+        QGridLayout *matBIMLay = new QGridLayout();
+
+
+        QStringList matNamesBIM;
+        for (int matIDBIM=0;matIDBIM<numMatsBIM;matIDBIM++)
+        {
+            matNamesBIM.append(QString::fromStdString(theWall->matsBIM[matIDBIM]["name"]));
+        }
+        matSelectorBIM.append( addCombo(tr("Material name: "),matNamesBIM,&blank,matBIMLay,0,0,1,2));
+        connect(matSelectorBIM[i], SIGNAL(currentIndexChanged(int)), this, SLOT(matSelectorBIM_valueChanged_BIM(int)));
+
+        // adding each material to a box ui
+        map<string, string>::iterator itr;
+        QVector<QGroupBox*> tmpVecBox;
+        for (int matIDBIM=0;matIDBIM<theWall->matsBIM.size();matIDBIM++)
+        {
+
+            QGroupBox *matBIMWebBox = new QGroupBox("");
+            QGridLayout *matBIMWebLay = new QGridLayout();
+            int vIDtmp = 0;
+            for (itr = theWall->matsBIM[matIDBIM].begin(); itr != theWall->matsBIM[matIDBIM].end(); ++itr) {
+                QLineEdit *expNameEdt = addLineEdit(QString::fromStdString(itr->first), QString::fromStdString(itr->second), matBIMWebLay,vIDtmp,0);
+                expNameEdt->setDisabled(true);
+                vIDtmp++;
+            }
+            matBIMWebBox->setLayout(matBIMWebLay);
+            tmpVecBox.append(matBIMWebBox);
+
+            matBIMLay->addWidget(matBIMWebBox,matIDBIM+1,1);
+        }
+        matBIMs.append(tmpVecBox);
+
+        for (int j=1; j<theWall->matsBIM.size(); j++){
+            matBIMs[i][j]->hide();
+        }
+        matBIMs[i][0]->show();
+
+
+
+
+
+
+
+        matBIMBox->setLayout(matBIMLay);
+
+
+        // Layout
+        QGroupBox *layoutBIMBox = new QGroupBox("Rebar layout ");
+        QGridLayout *layoutBIMLay = new QGridLayout();
+
+
+        QGroupBox *layoutBIMWebBox = new QGroupBox("Web layout");
+        QGridLayout *layoutBIMWebLay = new QGridLayout();
+
+        QGroupBox *layoutBIMWebBox_long = new QGroupBox("Longitudinal");
+        QGridLayout *layoutBIMWebLay_long = new QGridLayout();
+        map<string, string>::iterator itrInnertmp;
+        int vIDtmp=0;
+        for (itrInnertmp = theWallSections_itr->second->longitudinalRebar_map.begin(); itrInnertmp != theWallSections_itr->second->longitudinalRebar_map.end(); ++itrInnertmp) {
+            QLineEdit *expNameEdt = addLineEdit(QString::fromStdString(itrInnertmp->first), QString::fromStdString(itrInnertmp->second), layoutBIMWebLay_long,vIDtmp,0);
+            cout << itrInnertmp->first << endl;
+            expNameEdt->setDisabled(true);
+            vIDtmp++;
+        }
+        //theWallSections_itr++;
+        layoutBIMWebBox_long->setLayout(layoutBIMWebLay_long);
+
+
+
+        QGroupBox *layoutBIMWebBox_trans = new QGroupBox("Transverse");
+        QGridLayout *layoutBIMWebLay_trans = new QGridLayout();
+        vIDtmp=0;
+        for (itrInnertmp = theWallSections_itr->second->transverseRebar_map.begin(); itrInnertmp != theWallSections_itr->second->transverseRebar_map.end(); ++itrInnertmp) {
+            QLineEdit *expNameEdt = addLineEdit(QString::fromStdString(itrInnertmp->first), QString::fromStdString(itrInnertmp->second), layoutBIMWebLay_trans,vIDtmp,0);
+            cout << itrInnertmp->first << endl;
+            expNameEdt->setDisabled(true);
+            vIDtmp++;
+        }
+        //theWallSections_itr++;
+        layoutBIMWebBox_trans->setLayout(layoutBIMWebLay_trans);
+
+
+
+        layoutBIMWebLay->addWidget(layoutBIMWebBox_long,1,1);
+        layoutBIMWebLay->addWidget(layoutBIMWebBox_trans,1,2);
+
+
+
+        //layoutBIMWebLay->setColumnStretch(2,1);
+        layoutBIMWebBox->setLayout(layoutBIMWebLay);
+
+        QGroupBox *layoutBIMBEBox = new QGroupBox("Boundary layout");
+        QGridLayout *layoutBIMBELay = new QGridLayout();
+
+
+
+        QGroupBox *layoutBIMBEBox_long = new QGroupBox("Longitudinal");
+        QGridLayout *layoutBIMBELay_long = new QGridLayout();
+        vIDtmp=0;
+        for (itrInnertmp = theWallSections_itr->second->longitudinalRebar_map.begin(); itrInnertmp != theWallSections_itr->second->longitudinalRebar_map.end(); ++itrInnertmp) {
+            QLineEdit *expNameEdt = addLineEdit(QString::fromStdString(itrInnertmp->first), QString::fromStdString(itrInnertmp->second), layoutBIMBELay_long,vIDtmp,0);
+            cout << itrInnertmp->first << endl;
+            expNameEdt->setDisabled(true);
+            vIDtmp++;
+        }
+        //theWallSections_itr++;
+        layoutBIMBEBox_long->setLayout(layoutBIMBELay_long);
+
+
+
+        QGroupBox *layoutBIMBEBox_trans = new QGroupBox("Transverse");
+        QGridLayout *layoutBIMBELay_trans = new QGridLayout();
+        vIDtmp=0;
+        for (itrInnertmp = theWallSections_itr->second->transverseRebar_map.begin(); itrInnertmp != theWallSections_itr->second->transverseRebar_map.end(); ++itrInnertmp) {
+            QLineEdit *expNameEdt = addLineEdit(QString::fromStdString(itrInnertmp->first), QString::fromStdString(itrInnertmp->second), layoutBIMBELay_trans,vIDtmp,0);
+            cout << itrInnertmp->first << endl;
+            expNameEdt->setDisabled(true);
+            vIDtmp++;
+        }
+        //theWallSections_itr++;
+        layoutBIMBEBox_trans->setLayout(layoutBIMBELay_trans);
+
+
+
+        layoutBIMBELay->addWidget(layoutBIMBEBox_long,1,1);
+        layoutBIMBELay->addWidget(layoutBIMBEBox_trans,1,2);
+
+
+
+        layoutBIMBELay->setColumnStretch(2,1);
+        layoutBIMBEBox->setLayout(layoutBIMBELay);
+
+
+
+        layoutBIMLay->addWidget(layoutBIMWebBox,1,1);
+        layoutBIMLay->addWidget(layoutBIMBEBox,2,1);
+        layoutBIMBox->setLayout(layoutBIMLay);
+
+
+        floorLay->addWidget(geoBox,1,1);
+        floorLay->addWidget(matBIMBox,2,1);
+        floorLay->addWidget(layoutBIMBox,3,1);
+
+        floorLay->setColumnStretch(1,1);
+        floorBox->setLayout(floorLay);
+
+        wallBIMLay->addWidget(floorBox,i+3,0,1,1);
+
+        floorBIMs.append(floorBox);
+
+
+    }
+    for (int j=1; j<numFloors; j++){
+        floorBIMs[j]->hide();
+    }
+    floorBIMs[0]->show();
+
+
 }
 
 // output panel
@@ -4594,8 +5774,10 @@ QComboBox *addCombo(QString text, QStringList items, QString *unitText,
     // width
     QRect rec = QApplication::desktop()->screenGeometry();
     //int height = 0.7*rec.height();
-    int width = 0.7*rec.width();
-    res->setMinimumWidth(0.25*width/2);
+    int width = 0.25*rec.width();
+    res->setMaximumWidth(0.25*width/2);
+    res->setMinimumWidth(0.2*width/2);
+
 
     // layout
     Lay->addWidget(Label);
@@ -4636,7 +5818,7 @@ QDoubleSpinBox *addDoubleSpin(QString text,QString *unitText,
     // width
     QRect rec = QApplication::desktop()->screenGeometry();
     //int height = 0.7*rec.height();
-    int width = 0.7*rec.width();
+    int width = 0.25*rec.width();
     res->setMinimumWidth(0.25*width/2);
 
     // layout
@@ -4660,6 +5842,41 @@ QDoubleSpinBox *addDoubleSpin(QString text,QString *unitText,
     return res;
 }
 
+
+
+
+
+QLineEdit *addLineEdit(QString labelText, QString text,
+                QGridLayout *gridLay,int row,int col, int nrow, int ncol)
+{
+    QHBoxLayout *Lay = new QHBoxLayout();
+    QLabel *Label = new QLabel(labelText);
+    QLineEdit *res = new QLineEdit();
+
+
+
+    // width
+    QRect rec = QApplication::desktop()->screenGeometry();
+    //int height = 0.7*rec.height();
+    int width = 0.35*rec.width();
+    res->setMinimumWidth(0.25*width/2);
+
+    res->setText(text);
+
+    // layout
+    Lay->addWidget(Label);
+    Lay->addStretch(0);
+    Lay->addWidget(res);
+
+
+    // main layout
+    Lay->setSpacing(2);
+    Lay->setMargin(0);
+    gridLay->addLayout(Lay,row,col,nrow,ncol);
+
+    return res;
+}
+
 // name(QLabel) + enter(QDoubleSpinBox) + units(QLabel)
 QSpinBox *addSpin(QString text, QString *unitText,
                   QGridLayout *gridLay,int row,int col, int nrow, int ncol)
@@ -4674,7 +5891,7 @@ QSpinBox *addSpin(QString text, QString *unitText,
     // width
     QRect rec = QApplication::desktop()->screenGeometry();
     //int height = 0.7*rec.height();
-    int width = 0.7*rec.width();
+    int width = 0.25*rec.width();
     res->setMinimumWidth(0.25*width/2);
 
     // layout
