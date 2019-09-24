@@ -169,6 +169,9 @@ class ConcreteShearWall
     string expName;
     double volumne;
 
+    double E_Concrete;
+    double fc_Concrete;
+
     double lengthofWall=0.;
     double heightofWall=0.;
     int numofMat=0;

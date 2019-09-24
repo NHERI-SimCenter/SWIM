@@ -238,15 +238,26 @@ private slots:
     void idFloorEdt_valueChanged_BIM(int idFloor);
     void idFloorEdt_valueChanged_SAM(int idFloor);
     void matSelectorBIM_valueChanged_BIM(int matID);
-    void rcSelector_valueChanged_SAM(int matID);
-    void concreteSelector_valueChanged_SAM(int matID);
-    void rebarSelector_valueChanged_SAM(int matID);
-    void steelSelector_valueChanged_SAM(int matID);
+    void rcSelector_valueChanged_SAM(QString matID);
+    void concreteSelector_valueChanged_SAM(QString matID);
+    void rebarSelector_valueChanged_SAM(QString matID);
+    void steelSelector_valueChanged_SAM(QString matID);
     void getSAM();
     void rc_valueChanged_SAM(double);
+    void rc_valueChanged_SAM(QString);
+    void rc_valueChanged_SAM();
     void concrete_valueChanged_SAM(double);
     void rebar_valueChanged_SAM(double);
+    void rebar_valueChanged_SAM(QString);
+    void rebar_valueChanged_SAM();
     void steel_valueChanged_SAM(double);
+    void showSteel();
+    void showRebar();
+    void showSteel(int steelID);
+    void webRCselector_valueChanged_SAM(QString);
+    void beRCselector_valueChanged_SAM(QString);
+    void assemble_valueChanged_SAM();
+    std::vector<float> getAIinputs();
 
 
     // Combo Box
@@ -584,6 +595,7 @@ private:
 
     QNetworkAccessManager *manager;
 
+    // adding wall AI
     QString rootDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation); // qApp->applicationDirPath();//
     bool tmpVar1 = QDir(rootDir).exists() ? false : QDir().mkdir(rootDir);
     QString modelPath = QDir(rootDir).filePath("model.pt");
@@ -597,14 +609,22 @@ private:
     QGridLayout *wallBIMLay;
     QVector<QGroupBox*> floorSAMs;
     QVector<QGroupBox*> floorBIMs;
+    QVector<QGroupBox*> steelBoxSAMs;
+    QMap<int, QGroupBox*> rebarBoxSAMs;
+    QMap<int, QGroupBox*> concreteBoxSAMs;
+    QMap<int, QGroupBox*> rcBoxSAMs;
     QVector<QVector<QGroupBox*>> matBIMs;
     QString expDirName = "/Users/simcenter/Codes/SimCenter/SWIM/data/wallDemo";
 
     QDir expDir = QDir(expDirName);
     QVector<QComboBox*> matSelectorBIM;
     int numMatsBIM=0;
-    int numFloors;
+    int numFloors=0;
     int currentFloorIDbim = 0;
+    double wallLength ;
+    double beLength ;
+    double webLength ;
+
     OpenSeesTclBuilder *thePreprocessor = new OpenSeesTclBuilder();
 
     QJsonObject samRoot;
@@ -616,19 +636,64 @@ private:
     QJsonArray uniaxialMaterials;
     QJsonArray ndMaterials;
 
-    QVector<QSpinBox *> matIDselector_rc ;
-    QVector<QSpinBox *> matIDselector_concrete ;
-    QVector<QSpinBox *> matIDselector_rebar ;
-    QVector<QSpinBox *> matIDselector_steel ;
+    QMap<int, QJsonObject> rebarMaterials;
+    QMap<int, QJsonObject> concreteMaterials;
+    QMap<int, QJsonObject> rcMaterials;
+
+    QMap<int, QDoubleSpinBox*> rct1Edt;
+    QMap<int, QDoubleSpinBox*> rct2Edt;
+    QMap<int, QDoubleSpinBox*> rct3Edt;
+    QMap<int, QComboBox*> rcMat1Edt;
+    QMap<int, QComboBox*> rcMat2Edt;
+    QMap<int, QComboBox*> rcMat3Edt;
+
+    QMap<int, QDoubleSpinBox*> concreteEEdt;
+    QMap<int, QDoubleSpinBox*> concretefpcEdt;
+    QMap<int, QDoubleSpinBox*> concretenuEdt;
+    QMap<int, QDoubleSpinBox*> concretebetaEdt;
+    QMap<int, QDoubleSpinBox*> concreteApEdt;
+    QMap<int, QDoubleSpinBox*> concreteAnEdt;
+    QMap<int, QDoubleSpinBox*> concreteBnEdt;
+
+    QMap<int, QComboBox*> rebarSteelMatEdt;
+    QMap<int, QDoubleSpinBox *> rebarAngEdt;
+    //QMap<int, QSpinBox *> rebarIdEdt;
+
+    QComboBox *matIDselector_rc ;
+    QComboBox *matIDselector_concrete ;
+    QComboBox *matIDselector_rebar ;// index is rebarID
+    QComboBox *matIDselector_steel ;// index is steelID
+
+    QStringList matIDList_rc;
+    QStringList matIDList_concrete;
+    QStringList matIDList_rebar;
+    QStringList matIDList_steel;
+
+    QStringList rcMatStrList;
+
+    QStringList steelModelTypes = {"Steel01"};
+
+    QMap<int, QStringList> matIDList_rc_mat1;
+    QMap<int, QStringList> matIDList_rc_mat2;
+    QMap<int, QStringList> matIDList_rc_mat3;
 
 
-    QLineEdit *steelTyeEdt;
+    QVector<QComboBox *> steelTyeEdt;
     QVector<QDoubleSpinBox *> steelEEdt;
     QVector<QDoubleSpinBox *> steelfyEdt;
     QVector<QDoubleSpinBox *> steelbEdt;
 
+    QVector<QComboBox *> webRCselector;
+    QVector<QComboBox *> beRCselector;
+
+
     QSpinBox *idFloorEdt_BIM ;
     QSpinBox *idFloorEdt_SAM ;
+
+    QGridLayout *webLay;
+
+    QDoubleSpinBox *eleSizeWebEdt;
+    QDoubleSpinBox *eleSizeBEEdt;
 
 };
 

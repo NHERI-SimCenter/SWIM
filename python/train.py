@@ -114,7 +114,7 @@ for data in train_labels.to_numpy():
 
 
 
-train = True
+train = False
 test = True
 
 inputSize = 5
@@ -206,7 +206,7 @@ print(dataset[0])
 print(labelset[0])
 print(predictedY[0])
 
-exit()
+#exit()
 
 
 # Predict

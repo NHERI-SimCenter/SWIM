@@ -848,7 +848,8 @@ int ConcreteShearWall::readBIM(const char *event, const char *bim)
     const char *name = json_string_value(json_object_get(theFloor, "name"));
     double location = json_number_value(json_object_get(theFloor, "elevation"));
     floors.insert(std::pair<string, double>(string(name), location));
-
+    if (location>heightofWall)
+        heightofWall = location;
     //std::cerr << "floor name: " << name << " loc: " << location << "\n";
   }
 
@@ -893,6 +894,8 @@ int ConcreteShearWall::readBIM(const char *event, const char *bim)
       if (strcmp(type, "concrete") == 0)
       {
         theMaterial = new Concrete();
+        E_Concrete = json_real_value(json_object_get(material, "E"));
+        fc_Concrete = json_real_value(json_object_get(material, "fpc"));
       }
       else if (strcmp(type, "steel") == 0)
       {

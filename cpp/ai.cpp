@@ -33,15 +33,28 @@ AI::AI(std::string modelPath)
 
         std::cout << "ok\n";
 
+        // ['height', 'length', 'thickness', 'E', 'fc']
         std::vector<float> inputsVec {0.9321, 0.1068, 0.2950, 1.0220, 1.0184};//(5, 1.);
         std::vector<float> predValues = predict(inputsVec);
+        // ['Ap','An', 'Bn', 'beta','N']
     }
 
 }
 
 std::vector<float> AI::predict(std::vector<float> inputsVec)
 {
+
+    // ['height', 'length', 'thickness', 'E', 'fc'] These values are form the training data
+    std::vector<float> meanVec {105.488780, 75.411463, 5.349366, 4149.122637, 5.366606};
+    std::vector<float> stdVec {57.042406, 31.171167, 1.883212, 475.822644, 1.224391};
+
+    // normalize input
     int inputSize = inputsVec.size();
+    for (int i=0; i<inputSize; i++)
+    {
+        inputsVec[i] = (inputsVec[i] - meanVec[i])/stdVec[i];
+    }
+
     std::vector<float> newCopiedVec(inputsVec);
     float* inputArray = &newCopiedVec[0];
 
