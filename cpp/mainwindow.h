@@ -264,6 +264,9 @@ private slots:
     void updateSAMFile();
     void doWallAnalysisOpenSees();
     void onOpenSeesFinished();
+    void loadNew();
+    void loadNewBtn_clicked();
+    void deletePanels();
 
 
     // Combo Box
@@ -622,6 +625,7 @@ private:
     QMap<int, QGroupBox*> rcBoxSAMs;
     QVector<QVector<QGroupBox*>> matBIMs;
     QString expDirName = "/Users/simcenter/Codes/SimCenter/SWIM/data/wallDemo";
+    QString openseespath = "/Users/simcenter/Codes/OpenSees-March2019/bin/opensees";
 
     QDir expDir = QDir(expDirName);
     QVector<QComboBox*> matSelectorBIM;

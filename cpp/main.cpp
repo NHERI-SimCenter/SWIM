@@ -46,11 +46,11 @@ int main(int argc, char *argv[])
 
     QFile file(":/styleCommon/style.qss");
     if(file.open(QFile::ReadOnly)) {
-       QString styleSheet = QLatin1String(file.readAll());
-       a.setStyleSheet(styleSheet);
+        QString styleSheet = QLatin1String(file.readAll());
+        a.setStyleSheet(styleSheet);
     }
 
-   w.setStyleSheet("QGroupBox {font: bold;}");
+    w.setStyleSheet("QGroupBox {font: bold;}");
 
     return a.exec();
 }
