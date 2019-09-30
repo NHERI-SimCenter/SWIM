@@ -84,15 +84,20 @@ private:
     std::vector<std::vector<int>> verticalIndex;
     std::vector<std::vector<double>> loc;
 
+    std::vector<std::vector<double>> *dispx;
+    std::vector<std::vector<double>> *dispy;
+
 
 public:
     deformWidget(QString xLabel, QString yLabel, QWidget *parent = 0);
     ~deformWidget();
 
     void setModel(QVector<double> *data_x, QVector<double> *data_y);
+    void setResp(std::vector<std::vector<double>> *dispx, std::vector<std::vector<double>> *dispy);
     void setResp(Resp *data_x, Resp *data_y);
     void plotModel();
     void plotResponse(int t = 0);
+    void plotResponse_old(int t = 0);
     void putSomeColorInMesh();
 };
 

@@ -281,8 +281,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // initialize data
     initialize();
-    reset();
-
+    //reset();
+/*
     inExp->clear();
     inExp->addItem("TCBF3_W8X28.json", ":/ExampleFiles/TCBF3_W8X28.json");
     inExp->addItem("NCBF1_HSS6x6.json", ":/ExampleFiles/NCBF1_HSS6x6.json");
@@ -319,7 +319,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // send request via post method
     manager->post(request, requestParams.toStdString().c_str());
-
+*/
 }
 
 //---------------------------------------------------------------
@@ -362,7 +362,7 @@ void MainWindow::initialize()
 
     // slider
     slider->setValue(1);
-
+/*
     // spinBox
     inNe->setValue(10);
     inNIP->setValue(10);
@@ -387,6 +387,7 @@ void MainWindow::initialize()
     matAsymm->setChecked(true);
     matFat->setChecked(true);
     connSymm->setChecked(false);
+    */
 }
 
 // reset
@@ -1773,7 +1774,7 @@ void MainWindow::inIM_currentIndexChanged(int row)
 void MainWindow::inShape_currentIndexChanged(int row)
 {
     shape = inShape->itemText(row);
-    buildModel();
+    //buildModel();
 }
 
 // material model
@@ -1839,20 +1840,20 @@ void MainWindow::inNe_valueChanged(int var)
 {
     // define new
     ne = var;
-    buildModel();
+    //buildModel();
 }
 // number of IPs
 void MainWindow::inNIP_valueChanged(int var)
 {
     NIP = var;
-    buildModel();
+    //buildModel();
 }
 // fibers across bf
 void MainWindow::inNbf_valueChanged(int var)
 {
     if (nbf != var){
         nbf = var;
-        zeroResponse();
+        //zeroResponse();
     }
 }
 // fibers across tf
@@ -1860,7 +1861,7 @@ void MainWindow::inNtf_valueChanged(int var)
 {
     if (ntf != var){
         ntf = var;
-        zeroResponse();
+        //zeroResponse();
     }
 }
 // fibers across d
@@ -1868,7 +1869,7 @@ void MainWindow::inNd_valueChanged(int var)
 {
     if (nd != var){
         nd = var;
-        zeroResponse();
+        //zeroResponse();
     }
 }
 // fibers across tw
@@ -1876,7 +1877,7 @@ void MainWindow::inNtw_valueChanged(int var)
 {
     if (ntw != var){
         ntw = var;
-        zeroResponse();
+        //zeroResponse();
     }
 }
 //---------------------------------------------------------------
@@ -1887,7 +1888,7 @@ void MainWindow::inLwp_valueChanged(double var)
     if (Lwp != var) {
         Lwp = var;
 
-        buildModel();
+        //buildModel();
     }
 }
 
@@ -1897,7 +1898,7 @@ void MainWindow::inL_valueChanged(double var)
     if (L != var) {
         L = var;
 
-        buildModel();
+        //buildModel();
     }
 }
 
@@ -1906,8 +1907,8 @@ void MainWindow::inDelta_valueChanged(double var)
 {
     if (delta != var) {
         delta = var/100.0;
-        deltaL->setText(QString("                                                        = L/%1").arg(1/(delta)));
-        buildModel();
+        //deltaL->setText(QString("                                                        = L/%1").arg(1/(delta)));
+        //buildModel();
     }
 }
 // Youngs mod
@@ -1915,7 +1916,7 @@ void MainWindow::inEs_valueChanged(double var)
 {
     if (theSteel.Es != var) {
         theSteel.Es = var;
-        zeroResponse();
+        //zeroResponse();
     }
 }
 // yield strength
@@ -1923,12 +1924,12 @@ void MainWindow::infy_valueChanged(double var)
 {
     if (theSteel.fy != var) {
         theSteel.fy = var;
-        zeroResponse();
+        //zeroResponse();
     }
 }
 // strain hardening
 void MainWindow::inb_valueChanged(double var)
-{
+{/*
     if (theSteel.bk != var) {
         theSteel.bk = var;
         inbk->setValue(var);
@@ -1939,34 +1940,35 @@ void MainWindow::inb_valueChanged(double var)
 
         zeroResponse();
     }
+    */
 }
 // material props
 void MainWindow::ina1_valueChanged(double var)
 {
     if (theSteel.a1 != var) {
         theSteel.a1 = var;
-        zeroResponse();
+        //zeroResponse();
     }
 }
 void MainWindow::ina2_valueChanged(double var)
 {
     if (theSteel.a2 != var) {
         theSteel.a2 = var;
-        zeroResponse();
+        //zeroResponse();
     }
 }
 void MainWindow::ina3_valueChanged(double var)
 {
     if (theSteel.a3 != var) {
         theSteel.a3 = var;
-        zeroResponse();
+        //zeroResponse();
     }
 }
 void MainWindow::ina4_valueChanged(double var)
 {
     if (theSteel.a4 != var) {
         theSteel.a4 = var;
-        zeroResponse();
+        //zeroResponse();
     }
 }
 //
@@ -1980,7 +1982,7 @@ void MainWindow::inR0_valueChanged(double var)
         if (inclAsymm == false)
             inR0kc->setValue(var);
 
-        zeroResponse();
+        //zeroResponse();
     }
 }
 void MainWindow::inR1_valueChanged(double var)
@@ -1993,7 +1995,7 @@ void MainWindow::inR1_valueChanged(double var)
         if (inclAsymm == false)
             inr1c->setValue(var);
 
-        zeroResponse();
+        //zeroResponse();
     }
 }
 void MainWindow::inR2_valueChanged(double var)
@@ -2006,7 +2008,7 @@ void MainWindow::inR2_valueChanged(double var)
         if (inclAsymm == false)
             inr2c->setValue(var);
 
-        zeroResponse();
+        //zeroResponse();
     }
 }
 //
@@ -2020,7 +2022,7 @@ void MainWindow::inbk_valueChanged(double var)
         if (inclAsymm == false)
             inbkc->setValue(var);
 
-        zeroResponse();
+        //zeroResponse();
     }
 }
 void MainWindow::inR0k_valueChanged(double var)
@@ -2033,7 +2035,7 @@ void MainWindow::inR0k_valueChanged(double var)
         if (inclAsymm == false)
             inR0kc->setValue(var);
 
-        zeroResponse();
+        //zeroResponse();
     }
 }
 void MainWindow::inr1_valueChanged(double var)
@@ -2046,7 +2048,7 @@ void MainWindow::inr1_valueChanged(double var)
         if (inclAsymm == false)
             inr1c->setValue(var);
 
-        zeroResponse();
+        //zeroResponse();
     }
 }
 void MainWindow::inr2_valueChanged(double var)
@@ -2059,7 +2061,7 @@ void MainWindow::inr2_valueChanged(double var)
         if (inclAsymm == false)
             inr2c->setValue(var);
 
-        zeroResponse();
+        //zeroResponse();
     }
 }
 //
@@ -2067,28 +2069,28 @@ void MainWindow::inbkc_valueChanged(double var)
 {
     if (theSteel.bkc != var) {
         theSteel.bkc = var;
-        zeroResponse();
+        //zeroResponse();
     }
 }
 void MainWindow::inR0kc_valueChanged(double var)
 {
     if (theSteel.R0kc != var) {
         theSteel.R0kc = var;
-        zeroResponse();
+        //zeroResponse();
     }
 }
 void MainWindow::inr1c_valueChanged(double var)
 {
     if (theSteel.r1c != var) {
         theSteel.r1c = var;
-        zeroResponse();
+        //zeroResponse();
     }
 }
 void MainWindow::inr2c_valueChanged(double var)
 {
     if (theSteel.r2c != var) {
         theSteel.r2c = var;
-        zeroResponse();
+        //zeroResponse();
     }
 }
 //
@@ -2101,7 +2103,7 @@ void MainWindow::inbi_valueChanged(double var)
         if (inclAsymm == false)
             inbic->setValue(var);
 
-        zeroResponse();
+        //zeroResponse();
     }
 }
 void MainWindow::inrhoi_valueChanged(double var)
@@ -2113,7 +2115,7 @@ void MainWindow::inrhoi_valueChanged(double var)
         if (inclAsymm == false)
             inrhoic->setValue(var);
 
-        zeroResponse();
+        //zeroResponse();
     }
 }
 void MainWindow::inbl_valueChanged(double var)
@@ -2125,7 +2127,7 @@ void MainWindow::inbl_valueChanged(double var)
         if (inclAsymm == false)
             inblc->setValue(var);
 
-        zeroResponse();
+        //zeroResponse();
     }
 }
 void MainWindow::inRi_valueChanged(double var)
@@ -2137,42 +2139,42 @@ void MainWindow::inRi_valueChanged(double var)
         if (inclAsymm == false)
             inRic->setValue(var);
 
-        zeroResponse();
+        //zeroResponse();
     }
 }
 void MainWindow::inlyp_valueChanged(double var)
 {
     if (theSteel.lyp != var) {
         theSteel.lyp = var;
-        zeroResponse();
+        //zeroResponse();
     }
 }
 void MainWindow::inbic_valueChanged(double var)
 {
     if (theSteel.bic != var) {
         theSteel.bic = var;
-        zeroResponse();
+        //zeroResponse();
     }
 }
 void MainWindow::inrhoic_valueChanged(double var)
 {
     if (theSteel.rhoic != var) {
         theSteel.rhoic = var;
-        zeroResponse();
+        //zeroResponse();
     }
 }
 void MainWindow::inblc_valueChanged(double var)
 {
     if (theSteel.blc != var) {
         theSteel.blc = var;
-        zeroResponse();
+        //zeroResponse();
     }
 }
 void MainWindow::inRic_valueChanged(double var)
 {
     if (theSteel.Ric != var) {
         theSteel.Ric = var;
-        zeroResponse();
+        //zeroResponse();
     }
 }
 //
@@ -2181,7 +2183,7 @@ void MainWindow::inm_valueChanged(double var)
     if (theFat.m != var) {
         theFat.m = -var;
 
-        zeroResponse();
+        //zeroResponse();
     }
 }
 void MainWindow::ine0_valueChanged(double var)
@@ -2189,7 +2191,7 @@ void MainWindow::ine0_valueChanged(double var)
     if (theFat.e0 != var) {
         theFat.e0 = var;
 
-        zeroResponse();
+        //zeroResponse();
     }
 }
 void MainWindow::inemax_valueChanged(double var)
@@ -2197,7 +2199,7 @@ void MainWindow::inemax_valueChanged(double var)
     if (theFat.emax != var) {
         theFat.emax = var;
 
-        zeroResponse();
+        //zeroResponse();
     }
 }
 void MainWindow::inemin_valueChanged(double var)
@@ -2205,7 +2207,7 @@ void MainWindow::inemin_valueChanged(double var)
     if (theFat.emin != var) {
         theFat.emin = -var;
 
-        zeroResponse();
+        //zeroResponse();
     }
 }
 
@@ -2219,7 +2221,7 @@ void MainWindow::inl_conn1_valueChanged(double var)
         if (inclConnSymm == true)
             inl_conn2->setValue(var);
 
-        buildModel();
+        //buildModel();
     }
 }
 
@@ -2231,7 +2233,7 @@ void MainWindow::inRigA_conn1_valueChanged(double var)
         if (inclConnSymm == true)
             inRigA_conn2->setValue(var);
 
-        zeroResponse();
+        //zeroResponse();
     }
 }
 
@@ -2243,7 +2245,7 @@ void MainWindow::inRigI_conn1_valueChanged(double var)
         if (inclConnSymm == true)
             inRigI_conn2->setValue(var);
 
-        zeroResponse();
+        //zeroResponse();
     }
 }
 
@@ -2254,7 +2256,7 @@ void MainWindow::inl_conn2_valueChanged(double var)
         conn2.L = var;
         inL->setValue(Lwp-conn1.L-conn2.L);
 
-        buildModel();
+        //buildModel();
     }
 }
 
@@ -2263,7 +2265,7 @@ void MainWindow::inRigA_conn2_valueChanged(double var)
     if (conn2.rigA != var) {
         conn2.rigA = var;
 
-        zeroResponse();
+        //zeroResponse();
     }
 }
 
@@ -2272,14 +2274,14 @@ void MainWindow::inRigI_conn2_valueChanged(double var)
     if (conn2.rigI != var) {
         conn2.rigI = var;
 
-        zeroResponse();
+        //zeroResponse();
     }
 }
 
 //---------------------------------------------------------------
 // check boxes
 void MainWindow::matDefault_checked(int state)
-{
+{/*
     if (state == Qt::Checked) {
         zeroResponse();
         inclDefault = true;
@@ -2375,9 +2377,10 @@ void MainWindow::matDefault_checked(int state)
             inRic->setEnabled(true);
         }
     }
+    */
 }
 void MainWindow::matFat_checked(int state)
-{
+{/*
     if (state == Qt::Checked) {
         inclFat = true;
         fatBox->setVisible(true);
@@ -2390,9 +2393,10 @@ void MainWindow::matFat_checked(int state)
 
         zeroResponse();
     }
+    */
 }
 void MainWindow::matAsymm_checked(int state)
-{
+{/*
     if (state == Qt::Checked) {
         inclAsymm = true;
         zeroResponse();
@@ -2447,10 +2451,11 @@ void MainWindow::matAsymm_checked(int state)
         inblc->setEnabled(false);
         inRic->setEnabled(false);
     }
+    */
 }
 
 void MainWindow::connSymm_checked(int state)
-{
+{/*
     if (state == Qt::Checked) {
         inclConnSymm = true;
         inl_conn2->setEnabled(false);
@@ -2471,6 +2476,7 @@ void MainWindow::connSymm_checked(int state)
         inRigI_conn2->setEnabled(true);
         in_conn2->setEnabled(true);
     }
+    */
 }
 //---------------------------------------------------------------
 // slider
@@ -2487,10 +2493,10 @@ void MainWindow::slider_valueChanged(int value)
     tPlot->moveDot(tcurr,Dcurr);
 
     // update deform
-    dPlot->plotResponse(value);
-    mPlot->plotResponse(value);
-    pPlot->plotResponse(value);
-    hPlot->plotResponse(value);
+   dPlot->plotResponse(value);
+   //mPlot->plotResponse(value);
+   //pPlot->plotResponse(value);
+   hPlot->plotResponse(value);
 }
 
 /*
@@ -2589,7 +2595,7 @@ void MainWindow::zeroResponse()
     q2->reSize(ne,numSteps);
     q3->reSize(ne,numSteps);
 
-    dPlot->setResp(Ux,Uy);
+    //dPlot->setResp(Ux,Uy);
     mPlot->setResp(q2,q3);
     pPlot->setResp(q1,q1);
 
@@ -3609,7 +3615,7 @@ void MainWindow::doAnalysis()
     }
 
     // set plot
-    dPlot->setResp(Ux,Uy);
+    //dPlot->setResp(Ux,Uy);
     pPlot->setResp(q1,q1);
     mPlot->setResp(q2,q3);
     hPlot->setResp(&(*Ux->data[nn-1]),&(*q1->data[0]));
@@ -3836,6 +3842,9 @@ void MainWindow::onOpenSeesFinished()
             //hPlot->setResp(&(*Ux->data[nn-1]),&(*q1->data[0]));
             QVector<double> responseForceWall;
             std::vector<double> responseForceWall_std = postprocessor->getForce();
+            dispx = postprocessor->getDispx();
+            dispy = postprocessor->getDispy();
+
             for(auto f : responseForceWall_std)
             {
                 responseForceWall.append(f);
@@ -3843,6 +3852,11 @@ void MainWindow::onOpenSeesFinished()
 
             hPlot->setResp(expD,&responseForceWall);
             hPlot->plotResponse(0);
+
+            dPlot->setResp(&dispx, &dispy);
+            dPlot->plotResponse(0);
+
+
 
         }else{
             qDebug() << str_err;
@@ -3918,11 +3932,11 @@ void MainWindow::setExp(ExperimentWall *exp)
 
 
     // zero response
-    zeroResponse();
+    //zeroResponse();
 
     // set slider
     slider->setRange(0,numSteps-1);
-    slider->setValue(0);
+    //slider->setValue(0);
 
 }
 
@@ -4501,10 +4515,10 @@ void MainWindow::createInputPanel()
     QGridLayout *meshBoxLay = new QGridLayout();
     eleSizeWebEdt = addDoubleSpin(tr("Web Element Size"),&inch,meshBoxLay,0,0);
     eleSizeWebEdt->setToolTip(tr(""));
-    eleSizeWebEdt->setRange(1.0, webLength);
+    eleSizeWebEdt->setRange(2.0, webLength);
     eleSizeBEEdt = addDoubleSpin(tr("Boundary Element Size"),&inch,meshBoxLay,1,0);
     eleSizeBEEdt->setToolTip(tr(""));
-    eleSizeBEEdt->setRange(1.0, beLength);
+    eleSizeBEEdt->setRange(2.0, beLength);
 
     connect(eleSizeWebEdt, SIGNAL(valueChanged(double)), this, SLOT(ESize_valueChanged_SAM(double)));
     connect(eleSizeBEEdt, SIGNAL(valueChanged(double)), this, SLOT(ESize_valueChanged_SAM(double)));

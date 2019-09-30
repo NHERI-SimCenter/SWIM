@@ -65,40 +65,44 @@ void deformWidget::setModel(QVector<double> *data_x, QVector<double> *data_y)
 {
     size = data_x->size();
 
-    // initialize
-    xi->resize(size);
-    yi->resize(size);
-    xj->reSize(size,steps);
-    yj->reSize(size,steps);
+    if(size>0)
+    {
+        // initialize
+        xi->resize(size);
+        yi->resize(size);
+        xj->reSize(size,steps);
+        yj->reSize(size,steps);
 
-    // set
-    for (int i=0; i < size; i++) {
-        (*xi)[i] = (*data_x)[i];
-        (*yi)[i] = (*data_y)[i];
-    }
-    //xi = data_x; seg fault on destructor as just setting pointer to point to something else
-    //yi = data_y;
 
-    // max -X
-    maxX = 0.;
-    minX = 0.;
-    for (int j=0; j < size; j++) {
-        double val = (*xi)[j];
-        if (val > maxX)
-            maxX = val;
-        if (val < minX)
-            minX = val;
-    }
+        // set
+        for (int i=0; i < size; i++) {
+            (*xi)[i] = (*data_x)[i];
+            (*yi)[i] = (*data_y)[i];
+        }
+        //xi = data_x; seg fault on destructor as just setting pointer to point to something else
+        //yi = data_y;
 
-    // max -Y
-    maxY = 0.;
-    minY = 0.;
-    for (int j=0; j < size; j++) {
-        double val = (*yi)[j];
-        if (val > maxY)
-            maxY = val;
-        if (val < minY)
-            minY = val;
+        // max -X
+        maxX = 0.;
+        minX = 0.;
+        for (int j=0; j < size; j++) {
+            double val = (*xi)[j];
+            if (val > maxX)
+                maxX = val;
+            if (val < minX)
+                minX = val;
+        }
+
+        // max -Y
+        maxY = 0.;
+        minY = 0.;
+        for (int j=0; j < size; j++) {
+            double val = (*yi)[j];
+            if (val > maxY)
+                maxY = val;
+            if (val < minY)
+                minY = val;
+        }
     }
 }
 
@@ -110,7 +114,7 @@ void deformWidget::setResp(Resp *data_x, Resp *data_y)
     // add to coordinates
     xj->reSize(size,steps);
     yj->reSize(size,steps);
-
+/*
     for (int t=0; t<steps; t++)
         for (int j=0; j<size; j++)
         {
@@ -141,9 +145,16 @@ void deformWidget::setResp(Resp *data_x, Resp *data_y)
                 minY = val;
         }
     }
-
+*/
     //minX = 0; maxX = 20;
     //minY = 0; maxY = 20;
+}
+
+void deformWidget::setResp(std::vector<std::vector<double>> *dispxtmp, std::vector<std::vector<double>> *dispytmp)
+{
+    //dispx->clear(); dispy->clear();
+    dispx = dispxtmp;
+    dispy = dispytmp;
 }
 
 void deformWidget::plotModel()
@@ -208,6 +219,8 @@ void deformWidget::plotModel()
             ys.push_back(thisNodey);
         }
     }
+
+    size = int(loc.size());
 
 
 
@@ -350,7 +363,7 @@ void deformWidget::putSomeColorInMesh()
     thePlot->graph()->setData(xh,yh,true);
 }
 
-void deformWidget::plotResponse(int t)
+void deformWidget::plotResponse_old(int t)
 {
     // setup system plot
     thePlot->clearPlottables();
@@ -391,4 +404,83 @@ void deformWidget::plotResponse(int t)
 
     delete xt;
     delete yt;
+}
+
+
+void deformWidget::plotResponse(int t)
+{
+    // setup system plot
+    thePlot->clearPlottables();
+    thePlot->clearGraphs();
+
+    // add graph
+    graph = thePlot->addGraph();
+
+    // create pen
+    QPen pen;
+    pen.setWidthF(1);
+    pen.setColor(QColor(Qt::black));
+
+
+    double x0,y0;
+    double maxXt=0.;
+    if(verticalIndex.size()>0 && dispx->size()>0)
+    {
+        for(int i=0; i<int(verticalIndex.size());i++)
+        {
+            QVector<double> xh,yh;
+            for (int j=0;j< verticalIndex[i].size(); j++)
+            {
+                x0 = loc[verticalIndex[i][j]][0];
+                y0 = loc[verticalIndex[i][j]][1];
+                if(fabs(x0)>fabs(maxXt))
+                    maxXt = x0;
+                xh.append(x0+(*dispx)[t][verticalIndex[i][j]]);
+                yh.append(y0+(*dispy)[t][verticalIndex[i][j]]);
+            }
+            graph = thePlot->addGraph();
+            thePlot->graph()->setPen(pen);
+            thePlot->graph()->setData(xh,yh,true);
+        }
+        for(int i=0; i<int(horizontalIndex.size());i++)
+        {
+            QVector<double> xh,yh;
+            for (int j=0;j< horizontalIndex[i].size(); j++)
+            {
+                x0 = loc[horizontalIndex[i][j]][0];
+                y0 = loc[horizontalIndex[i][j]][1];
+                if(fabs(x0)>fabs(maxXt))
+                    maxXt = x0;
+                xh.append(x0+(*dispx)[t][horizontalIndex[i][j]]);
+                yh.append(y0+(*dispy)[t][horizontalIndex[i][j]]);
+            }
+            graph = thePlot->addGraph();
+            thePlot->graph()->setPen(pen);
+            //thePlot->graph()->setBrush(QBrush(QColor(0,0,255,100)));
+            thePlot->graph()->setData(xh,yh,true);
+        }
+    }
+
+    //putSomeColorInMesh();
+
+
+
+    /*
+    // axes
+    thePlot->xAxis->setRange(minX-10,maxX+10);
+    thePlot->yAxis->setRange(minY-1,maxY+1);
+    */
+    // axes
+    thePlot->xAxis->setRange(0-10,0+200);
+    thePlot->yAxis->setRange(0-10,0+200);
+
+    // update plot
+    thePlot->replot(QCustomPlot::rpQueuedReplot);
+    thePlot->update();
+
+    // update label
+    label->setText(QString("current = %1 in.").arg(maxXt,0,'f',2));
+
+    //delete xt;
+    //delete yt;
 }

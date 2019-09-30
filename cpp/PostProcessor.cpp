@@ -34,6 +34,7 @@ void PostProcessor::init()
 {
     totalLines = getLineCount();
     calcForce();
+    calcDeform();
 }
 
 
@@ -74,5 +75,69 @@ void PostProcessor::calcForce()
             }
         }
         forceFile.close();
+    }
+}
+
+void PostProcessor::calcDeform()
+{
+    calcDeformx();
+    calcDeformy();
+}
+void PostProcessor::calcDeformx()
+{
+    QFile xFile(xFileName);
+    dispx.clear();
+    std::vector<double> aLine;
+    int numofNodes = 1;
+
+    if(xFile.open(QIODevice::ReadOnly)) {
+        QTextStream in(&xFile);
+        while(!in.atEnd()) {
+            QString line = in.readLine();
+            QStringList thisLine = line.split(" ");
+            thisLine.removeAll("");
+            if (thisLine.size()<numofNodes)
+                break;
+            else
+            {
+                numofNodes = thisLine.size();
+                aLine.clear();
+                for (int i=0; i<thisLine.size(); i++)
+                {
+                    aLine.push_back(thisLine[i].trimmed().toDouble());
+                }
+                dispx.push_back(aLine);
+            }
+        }
+        xFile.close();
+    }
+}
+void PostProcessor::calcDeformy()
+{
+    QFile yFile(yFileName);
+    dispy.clear();
+    std::vector<double> aLine;
+    int numofNodes = 1;
+
+    if(yFile.open(QIODevice::ReadOnly)) {
+        QTextStream in(&yFile);
+        while(!in.atEnd()) {
+            QString line = in.readLine();
+            QStringList thisLine = line.split(" ");
+            thisLine.removeAll("");
+            if (thisLine.size()<numofNodes)
+                break;
+            else
+            {
+                numofNodes = thisLine.size();
+                aLine.clear();
+                for (int i=0; i<thisLine.size(); i++)
+                {
+                    aLine.push_back(thisLine[i].trimmed().toDouble());
+                }
+                dispy.push_back(aLine);
+            }
+        }
+        yFile.close();
     }
 }

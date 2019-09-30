@@ -21,7 +21,12 @@ public:
     int getLineCount();
     void update();
     void calcForce();
+    void calcDeformx();
+    void calcDeformy();
+    void calcDeform();
     std::vector<double> getForce(){return force;}
+    std::vector<std::vector<double>> getDispx(){return dispx;}
+    std::vector<std::vector<double>> getDispy(){return dispy;}
 
     void init();
 
@@ -39,8 +44,14 @@ private:
     QString m_outputDir;
     // opensees results
     QString forceFileName = QDir(m_outputDir).filePath("resultsOpenSees.out");
+    QString xFileName = QDir(m_outputDir).filePath("dispx.out");
+    QString yFileName = QDir(m_outputDir).filePath("dispy.out");
+    QString xyFileName = QDir(m_outputDir).filePath("disp.out");
 
     std::vector<double> force;
+    std::vector<std::vector<double>> dispx;
+    std::vector<std::vector<double>> dispy;
+    std::vector<std::vector<double>> dispxy;
 
 };
 

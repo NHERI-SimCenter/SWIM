@@ -710,6 +710,9 @@ private:
 
     ExperimentWall *expWall = new ExperimentWall();
 
+    std::vector<std::vector<double>> dispx ;
+    std::vector<std::vector<double>> dispy ;
+
 signals:
     void signalProgress(int);
 
