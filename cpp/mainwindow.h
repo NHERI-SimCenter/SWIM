@@ -59,6 +59,8 @@ UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 #include "ai.h"
 #include "ConcreteShearWall.h"
 #include "OpenSeesTclBuilder.h"
+#include "experimentWall.h"
+#include "PostProcessor.h"
 
 
 class Experiment;
@@ -258,6 +260,10 @@ private slots:
     void beRCselector_valueChanged_SAM(QString);
     void assemble_valueChanged_SAM();
     std::vector<float> getAIinputs();
+    void ESize_valueChanged_SAM(double);
+    void updateSAMFile();
+    void doWallAnalysisOpenSees();
+    void onOpenSeesFinished();
 
 
     // Combo Box
@@ -356,6 +362,7 @@ private:
 
     // load information
     void loadAISC();
+    void setExp(ExperimentWall *exp);
     void setExp(Experiment *exp);
     void initialize();
     void zeroResponse();
@@ -694,6 +701,17 @@ private:
 
     QDoubleSpinBox *eleSizeWebEdt;
     QDoubleSpinBox *eleSizeBEEdt;
+
+    QProgressBar * progressbar;
+
+    QProcess* openseesProcess;
+
+    int openseesErrCount = 0;
+
+    ExperimentWall *expWall = new ExperimentWall();
+
+signals:
+    void signalProgress(int);
 
 };
 

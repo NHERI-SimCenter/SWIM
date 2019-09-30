@@ -13,6 +13,7 @@
 
 static int nL = 1;
 static int nH = 1;
+static int nW = 2;
 
 static ConcreteShearWall *theModel = 0;
 static int eleTag = 0;
@@ -548,7 +549,7 @@ int ConcreteRectangularWallSection::writeNDJSON(json_t *elements, json_t *nodes,
   }
 
   // mesh the section
-  int numBoundary = 2;
+  int numBoundary = max(nW,1);
   /*
   int numLength = nL; //int numLength = ceil(dX/maxWallEleLength);
   int numHeight = nH; // int numHeight = ceil(dX/maxWallEleLength);
@@ -557,7 +558,7 @@ int ConcreteRectangularWallSection::writeNDJSON(json_t *elements, json_t *nodes,
   double deltaY = dY / numLength;
   double deltaZ = dZ / numHeight;
   */
-  double deltaX1 = be_length / 2.0;
+  double deltaX1 = be_length / numBoundary;
   int numLength, numHeight;
   if (nL < 1.0)
   {
@@ -603,7 +604,7 @@ int ConcreteRectangularWallSection::writeNDJSON(json_t *elements, json_t *nodes,
         json_array_append(theNodes, json_integer(kNode));
         json_array_append(theNodes, json_integer(lNode));
         json_object_set(theElement, "nodes", theNodes);
-        if (j < 2 || j > numLength + 1) // boundary
+        if (j < numBoundary || j > numLength + numBoundary-1) // boundary
           json_object_set(theElement, "material", json_integer(tag_matB));
         else
           json_object_set(theElement, "material", json_integer(tag_matM));
@@ -1038,10 +1039,12 @@ void ConcreteShearWall::calcProperties()
   //double axss = theWallSections[0]->thickness;
 }
 
-int ConcreteShearWall::writeSAM(const char *path, int nLtmp, int nHtmp)
+int ConcreteShearWall::writeSAM(const char *path, int nLtmp, int nHtmp, int nWeb)
 {
   nL = nLtmp;
   nH = nHtmp;
+  nW = nWeb;
+
 
   int nStory = numFloors;
   json_t *root = json_object();

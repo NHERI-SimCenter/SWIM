@@ -1147,6 +1147,17 @@ int OpenSeesTclBuilder::processEvents(ofstream &s)
 
               json_t *position = json_array_get(positions, i);
               json_t *value = json_array_get(responseData, i);
+              size_t indextmpthis;
+              json_t *valuetmpthis;
+              double valueTmpDouble;
+              json_array_foreach(value, indextmpthis, valuetmpthis) {
+                  if(json_is_real(valuetmpthis))
+                      valueTmpDouble = json_real_value(valuetmpthis);
+                  if(json_is_integer(valuetmpthis))
+                      valueTmpDouble = double(json_integer_value(valuetmpthis));
+                  forceVec.push_back(valueTmpDouble);
+              }
+
               json_t *startPointJson = json_object();
               json_t *endPointJson = json_object();
               string dof;
@@ -1462,6 +1473,9 @@ int OpenSeesTclBuilder::processEvents(ofstream &s)
         << "\n\n";
 
       s << myRecorderStr.str(); // add recorder
+      s << "eval \"recorder Node -file disp.out -nodeRange 1 " +std::to_string(numNodes)+ " -dof 1 2 disp\" \n";
+      s << "eval \"recorder Node -file dispx.out -nodeRange 1 " +std::to_string(numNodes)+ " -dof 1 disp\" \n";
+      s << "eval \"recorder Node -file dispy.out -nodeRange 1 " +std::to_string(numNodes)+ " -dof 2 disp\" \n";
 
       s << "\nsystem UmfPack \n";
       s << "constraints Penalty 1.0e10 1.0e10 \n";
@@ -1485,6 +1499,8 @@ int OpenSeesTclBuilder::processEvents(ofstream &s)
       s << "if {$ok != 0} {	 \n";
       s << "set i [expr $nPts]; \n";
       s << "} \n";
+      s << "set progress [expr ($i*1.0)/($nPts*1.0) * 100.]\n";
+      s << "puts \"$progress%\"\n";
       s << "} \n";
 
       s << "puts \"cyclic is done.\""
@@ -1536,6 +1552,7 @@ int OpenSeesTclBuilder::processEvent(ofstream &s,
 
       json_array_foreach(data, dataIndex, dataV)
       {
+        dispVec.push_back(json_number_value(json_array_get(dataV, 0)));
         s << json_number_value(json_array_get(dataV, 0)) << " ";
       }
       s << " }\n";

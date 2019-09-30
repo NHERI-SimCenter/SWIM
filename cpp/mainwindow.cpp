@@ -276,6 +276,8 @@ MainWindow::MainWindow(QWidget *parent) :
     int height = this->height()<int(0.75*rec.height())?int(0.75*rec.height()):this->height();
     int width  = this->width()<int(0.85*rec.width())?int(0.85*rec.width()):this->width();
     this->resize(width, height);
+    //this->setMaximumHeight(100);
+
 
     // initialize data
     initialize();
@@ -1394,6 +1396,7 @@ void MainWindow::loadExperimentalFile(const QString &fileName)
     // read experiment loading
     json = jsonObject["test"];
 
+
     Experiment *exp = new Experiment();
     int ok = exp->inputFromJSON(json);
 
@@ -1408,6 +1411,7 @@ void MainWindow::loadExperimentalFile(const QString &fileName)
     else if (ok == -5) {
         QMessageBox::warning(this, "Warning", "Experiment test type not specified.");
     }
+
 
     setExp(exp);
 
@@ -3766,6 +3770,97 @@ void MainWindow::doWallAnalysis()
 
 }
 
+void MainWindow::doWallAnalysisOpenSees()
+{
+    QString tclFileName = expDirName + "/wall.tcl";
+
+    QString openseespath = "/Users/simcenter/Codes/OpenSees-March2019/bin/opensees";
+    QFile openseesExefile(openseespath);
+
+    if(openseesExefile.exists())
+    {   // do FEA in opensees
+        progressbar->show();
+        updateSAMFile();// update sam file
+        preprocess();//create tcl
+
+        // init the opensess process
+        delete openseesProcess;
+        openseesProcess = new QProcess(this);
+        openseesProcess->setWorkingDirectory(expDirName);
+        //connect(openseesProcess, SIGNAL(readyReadStandardOutput()),this,SLOT(onOpenSeesFinished()));
+        connect(openseesProcess, SIGNAL(readyReadStandardError()),this,SLOT(onOpenSeesFinished()));
+
+        openseesProcess->start(openseespath,QStringList()<<tclFileName);
+        openseesErrCount = 1;
+
+    }
+
+}
+
+
+void MainWindow::onOpenSeesFinished()
+{
+
+    //writeSurfaceMotion();
+    QString str_err = openseesProcess->readAllStandardError();
+
+    if(openseesErrCount==1)
+    {
+        if(str_err.contains("cyclic is done."))
+        {
+
+            //qDebug() << "opensees says:" << str_err;
+            openseesErrCount = 2;
+
+            // do some postprocessing here
+
+            QMessageBox::information(this,tr("OpenSees Information"), "Analysis is done.", tr("I know."));
+
+
+            emit signalProgress(100);
+            progressbar->hide();
+
+            PostProcessor *postprocessor = new PostProcessor(expDirName);
+
+            //std::vector<double> *a = &thePreprocessor->dispVec;
+            //std::vector<double> b = postprocessor->force[0];
+            expWall->setD(&thePreprocessor->dispVec);
+            expWall->setP(&thePreprocessor->forceVec);
+            expWall->setTime();
+            setExp(expWall);
+
+            hPlot->setModel(expD,expP);
+            hPlot->plotModel();
+
+
+            //hPlot->setResp(&(*Ux->data[nn-1]),&(*q1->data[0]));
+            QVector<double> responseForceWall;
+            std::vector<double> responseForceWall_std = postprocessor->getForce();
+            for(auto f : responseForceWall_std)
+            {
+                responseForceWall.append(f);
+            }
+
+            hPlot->setResp(expD,&responseForceWall);
+            hPlot->plotResponse(0);
+
+        }else{
+            qDebug() << str_err;
+            QRegExp rxlen("(.+)(%)");
+            int pos = rxlen.indexIn(str_err);
+            if (pos > -1) {
+                QString value = rxlen.cap(1);
+                int step = int(ceil(value.toDouble()));
+                if(step>0)
+                    emit signalProgress(step);
+            }
+
+
+        }
+    }
+
+}
+
 void MainWindow::setExp(Experiment *exp)
 {
     numSteps = exp->getNumSteps();
@@ -3792,6 +3887,43 @@ void MainWindow::setExp(Experiment *exp)
     // set slider
     slider->setRange(0,numSteps-1);
     slider->setValue(0);
+}
+
+void MainWindow::setExp(ExperimentWall *exp)
+{
+    numSteps = exp->getNumSteps();
+
+    /*
+    // experimental data
+    expD = new QVector<double>(numSteps,0.);
+    expP = new QVector<double>(numSteps,0.);
+    time = new QVector<double>(numSteps,0.);
+    */
+
+    // re-size
+    time->resize(numSteps);
+    expP->resize(numSteps);
+    expD->resize(numSteps);
+
+    // extract from experiment
+    time = exp->getTime();
+    dt = exp->getdt();
+    expP = exp->getDataP();
+    expD = exp->getDataD();
+
+    // update experiment plot
+    tPlot->setData(expD,time);
+    hPlot->setModel(expD,expP);
+    hPlot->plotModel();
+
+
+    // zero response
+    zeroResponse();
+
+    // set slider
+    slider->setRange(0,numSteps-1);
+    slider->setValue(0);
+
 }
 
 // layout functions
@@ -3899,7 +4031,7 @@ void MainWindow::createInputPanel()
     inExp->setToolTip(tr("Experiment name"));
     expLay->addWidget(addExp,0,1);
     QRect rec = QApplication::desktop()->screenGeometry();
-    //int height = 0.7*rec.height();
+    int height = 0.7*rec.height();
     //FMK    int width = 0.7*rec.width();
     //FMK inExp->setMinimumWidth(0.6*width/2);
     expLay->setColumnStretch(2,1);
@@ -4369,10 +4501,14 @@ void MainWindow::createInputPanel()
     QGridLayout *meshBoxLay = new QGridLayout();
     eleSizeWebEdt = addDoubleSpin(tr("Web Element Size"),&inch,meshBoxLay,0,0);
     eleSizeWebEdt->setToolTip(tr(""));
-    eleSizeWebEdt->setRange(0.0, 1e15);
+    eleSizeWebEdt->setRange(1.0, webLength);
     eleSizeBEEdt = addDoubleSpin(tr("Boundary Element Size"),&inch,meshBoxLay,1,0);
     eleSizeBEEdt->setToolTip(tr(""));
-    eleSizeBEEdt->setRange(0.0, 1e15);
+    eleSizeBEEdt->setRange(1.0, beLength);
+
+    connect(eleSizeWebEdt, SIGNAL(valueChanged(double)), this, SLOT(ESize_valueChanged_SAM(double)));
+    connect(eleSizeBEEdt, SIGNAL(valueChanged(double)), this, SLOT(ESize_valueChanged_SAM(double)));
+
     meshBoxLay->setColumnStretch(1,1);
     meshBoxLay->setRowStretch(1,1);
     meshBox->setLayout(meshBoxLay);
@@ -4412,10 +4548,10 @@ void MainWindow::createInputPanel()
         concreteBnEdt[cIDtmp]->setValue(std::max(predValues[2],float(0.)));
         concretebetaEdt[cIDtmp]->setValue(std::max(predValues[3],float(0.)));
     }
-    int nL = std::max(int(predValues[3]),1);// number of elements along web length
+    int nL = std::max(int(predValues[4]),1);// number of elements along web length
     eleSizeWebEdt->setValue(webLength/double(nL));
     eleSizeBEEdt->setValue(beLength/2.0);// default mesh of boundary: 2 elements
-
+    updateSAMFile();
 
 
 
@@ -4443,9 +4579,24 @@ void MainWindow::createInputPanel()
     // add buttons
     inLay->addLayout(buttonLay);
 
+
+
     // add to main layout
     inBox->setLayout(inLay);
-    mainLayout->addWidget(inBox, 0);
+
+    QScrollArea *inscrollArea = new QScrollArea;
+    //inscrollArea->setBackgroundRole(QPalette::Dark);
+    inscrollArea->setWidget(inBox);
+    rec = QGuiApplication::primaryScreen()->geometry();
+    int wheight = this->height()<int(0.55*rec.height())?int(0.55*rec.height()):this->height();
+    int wwidth  = this->width()<int(0.55*rec.width())?int(0.55*rec.width()):this->width();
+    inscrollArea->setMinimumSize(wwidth, wheight);
+    //inscrollArea->resize(wwidth, wheight);
+
+
+    mainLayout->addWidget(inscrollArea, 0);
+
+
 
     //largeLayout->addLayout(mainLayout);
 
@@ -4454,7 +4605,9 @@ void MainWindow::createInputPanel()
     connect(addExp,SIGNAL(clicked()), this, SLOT(addExp_clicked()));
     connect(addAISC,SIGNAL(clicked()), this, SLOT(addAISC_clicked()));
     connect(reset,SIGNAL(clicked()), this, SLOT(reset()));
-    connect(run,SIGNAL(clicked()), this, SLOT(doWallAnalysis()));
+    //connect(run,SIGNAL(clicked()), this, SLOT(doAnalysis()));
+    //connect(run,SIGNAL(clicked()), this, SLOT(doWallAnalysis()));
+    connect(run,SIGNAL(clicked()), this, SLOT(doWallAnalysisOpenSees()));
     //connect(stop,SIGNAL(clicked()), this, SLOT(stop_clicked()));
     connect(playButton,SIGNAL(clicked()), this, SLOT(play_clicked()));
     //connect(pause,SIGNAL(clicked()), this, SLOT(pause_clicked()));
@@ -4539,6 +4692,16 @@ void MainWindow::createInputPanel()
     connect(connSymm, SIGNAL(stateChanged(int)), this, SLOT(connSymm_checked(int)));
 }
 
+void MainWindow::ESize_valueChanged_SAM(double esize)
+{
+
+     if (dPlot != nullptr)
+     {
+         updateSAMFile();
+         dPlot->plotModel();
+     }
+}
+
 // handle when user change the number of floors // adding wall
 void MainWindow::nofEdt_valueChanged(int nof)
 {
@@ -4610,7 +4773,8 @@ void MainWindow::createSAM()
     QString samFileName = expDirName + "/SAM.json";
 
     int nL = 5;
-    int nH = 5;
+    int nH = nL;
+    int nW = 5;
 
     double beta = 0.5;
     double An = 0.5;
@@ -4622,7 +4786,36 @@ void MainWindow::createSAM()
     theWall = new ConcreteShearWall();
     theWall->initConcrete(beta, An, Ap, Bn);
     theWall->readBIM(filenameEVENT, bimFileName.toStdString().c_str());
-    theWall->writeSAM(samFileName.toStdString().c_str(), nL, nH);
+    theWall->writeSAM(samFileName.toStdString().c_str(), nL, nH, nW);
+
+    printf("SAM file created successfully. \n");
+
+}
+
+void MainWindow::updateSAMFile()
+{
+
+    QString bimFileName = expDirName + "/BIM.json";
+    QString samFileName = expDirName + "/SAM.json";
+
+    double esizeWeb = eleSizeWebEdt->value();
+    double esizeBE = eleSizeBEEdt->value();
+
+    int nL = int(round(webLength/esizeWeb));
+    int nH = nL; // this number doesn't matter
+    int nW = int(round(beLength/esizeBE));
+
+    double beta = 0.5;
+    double An = 0.5;
+    double Ap = 0.5;
+    double Bn = 0.5;
+
+    char *filenameEVENT = 0;
+
+    theWall = new ConcreteShearWall();
+    theWall->initConcrete(beta, An, Ap, Bn);
+    theWall->readBIM(filenameEVENT, bimFileName.toStdString().c_str());
+    theWall->writeSAM(samFileName.toStdString().c_str(), nL, nH, nW);
 
     printf("SAM file created successfully. \n");
 
@@ -4649,7 +4842,8 @@ void MainWindow::preprocess()
     char *filenameTCL = tclFileName_ba.data();
 
 
-
+    //delete thePreprocessor;
+    thePreprocessor = new OpenSeesTclBuilder();
     string ModelType = thePreprocessor->getModelType(filenameSAM);// continuum or beamcolumn?
 
 
@@ -4675,7 +4869,10 @@ void MainWindow::preprocess()
         std::cout << "No matching model type." << endl;
     }
 
-    delete thePreprocessor;
+
+
+
+
 }
 
 void MainWindow::getSAM()
@@ -5498,6 +5695,8 @@ void MainWindow::createBIMui()
         //theWallSections_itr++;
         layoutBIMWebBox_long->setLayout(layoutBIMWebLay_long);
 
+        layoutBIMBox->hide();
+
 
 
         QGroupBox *layoutBIMWebBox_trans = new QGroupBox("Transverse");
@@ -5662,6 +5861,7 @@ void MainWindow::createOutputPanel()
     QGroupBox *outBox = new QGroupBox("Output");
     QVBoxLayout *outputLayout = new QVBoxLayout();
 
+
     /* FMK - moving disp to tab
     QHBoxLayout *dispAndTabLayout = new QHBoxLayout();
     dispAndTabLayout->addWidget(dispBox,1);
@@ -5683,9 +5883,21 @@ void MainWindow::createOutputPanel()
 
   // outLay->addLayout(buttonLay,3,0);
 
+    progressbar = new QProgressBar(this);
+    progressbar->setOrientation(Qt::Vertical);
+    progressbar->setValue(50);
+    progressbar->hide();
+    mainLayout->addWidget(progressbar,1);
+    connect( this, SIGNAL( signalProgress(int) ), progressbar, SLOT( setValue(int) ) );
+
+
     // add to main layout
     outBox->setLayout(outputLayout);
-    mainLayout->addWidget(outBox,1);
+    mainLayout->addWidget(outBox,2);
+
+
+
+
 
     //connect(slider, SIGNAL(sliderPressed()),  this, SLOT(slider_sliderPressed()));
     //connect(slider, SIGNAL(sliderReleased()), this, SLOT(slider_sliderReleased()));
@@ -5891,8 +6103,7 @@ QSpinBox *addSpin(QString text, QString *unitText,
     // width
     QRect rec = QApplication::desktop()->screenGeometry();
     //int height = 0.7*rec.height();
-    int width = 0.25*rec.width();
-    res->setMinimumWidth(0.25*width/2);
+
 
     // layout
     Lay->addWidget(Label);

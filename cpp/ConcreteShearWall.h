@@ -150,7 +150,7 @@ class ConcreteShearWall
     void initConcrete(double tbeta, double tAn, double tAp, double tBn);
 
     int readBIM(const char *fileEVENT, const char *fileBIM);
-    int writeSAM(const char *path, int nL, int nH);
+    int writeSAM(const char *path, int nL, int nH, int nW);
     int writeOpenSeesModel(const char *path);
     void setModelingParameters(int numX, int numY);
 

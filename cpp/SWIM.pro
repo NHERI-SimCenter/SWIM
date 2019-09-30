@@ -62,7 +62,9 @@ SOURCES += \
     qcustomplot/qcustomplot.cpp \
     ai.cpp \
     ConcreteShearWall.cpp \
-    OpenSeesTclBuilder.cpp
+    OpenSeesTclBuilder.cpp \
+    experimentWall.cpp \
+    PostProcessor.cpp
 
 HEADERS += \
     mainwindow.h \
@@ -75,7 +77,9 @@ HEADERS += \
     qcustomplot/qcustomplot.h \
     ai.h \
     ConcreteShearWall.h \
-    OpenSeesTclBuilder.h
+    OpenSeesTclBuilder.h \
+    experimentWall.h \
+    PostProcessor.h
 
 #FORMS += \
 #        mainwindow.ui
