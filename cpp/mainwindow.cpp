@@ -2844,8 +2844,8 @@ void MainWindow::cite()
 {
     QString textCite = "\
         <p>\
-Charles Wang & Frank McKenna. (2019, October). \
-NHERI-SimCenter SWIM (Version v1.0.0). Zenodo. http://doi.org/10.5281/zenodo \
+Charles Wang & Frank McKenna. (2019, October 1). \
+SimCenter/SWIM: v1.0.0 (Version v1.0.0). Zenodo. http://doi.org/10.5281/zenodo.3466376 \
       <p>\
       ";
 
