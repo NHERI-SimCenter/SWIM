@@ -1,0 +1,253 @@
+{
+	"GeneralInformation": {
+		"name": "RCWall_WallaceRW2",
+		"revision": 1,
+		"type": "ExperimentalTest",
+		"year": null,
+		"stories": 4,
+		"height": 144,
+		"volume": 27648,
+		"area": null,
+		"location": {
+			"name": "unknown",
+			"latitude": null,
+			"longitude": null
+		},
+		"units": {
+			"force": "kip",
+			"length": "in",
+			"time": "sec",
+			"temperature": "F"
+		},
+		"engineer": "Wallace",
+		"URL": null,
+		"DOI": null
+	},
+	"StructuralInformation": {
+		"type": "A1 - SpecialReinforcedConcreteShearWall",
+		"layout": {
+			"floors": [
+				{
+					"name": "0",
+					"elevation": 0
+				},
+				{
+					"name": "1",
+					"elevation": 36
+				},
+				{
+					"name": "2",
+					"elevation": 72
+				},
+				{
+					"name": "3",
+					"elevation": 108
+				},
+				{
+					"name": "4",
+					"elevation": 144
+				}
+			],
+			"clines": [
+				{
+					"name": "1",
+					"location": [0,0]
+				},
+				{
+					"name": "2",
+					"location": [48,0]
+				}
+			]
+		},
+		"properties": {
+			"materials": [
+				{
+					"name": "Concrete",
+					"type": "concrete",
+					"masspervolume": 8.60914e-05,
+					"fpc": 4.925,
+					"E": 4000.165622,
+					"nu": 0.2
+				},
+				{
+					"name": "Steel Web Vert",
+					"type": "steel rebar",
+					"masspervolume": 0.0002810502998,
+					"fy": 65,
+					"E": 29000,
+					"fu": 85,
+					"epsu": 0.08
+				},
+				{
+					"name": "Steel Web Horz",
+					"type": "steel rebar",
+					"masspervolume": 0.0002810502998,
+					"fy": 65,
+					"E": 29000,
+					"fu": 85,
+					"epsu": 0.08
+				},
+				{
+					"name": "Steel Web Shear",
+					"type": "steel rebar",
+					"masspervolume": 0.0002810502998,
+					"fy": 0,
+					"E": 29000,
+					"fu": 0
+				},
+				{
+					"name": "Steel BE Vert",
+					"type": "steel rebar",
+					"masspervolume": 0.0002810502998,
+					"fy": 63,
+					"E": 29000,
+					"fu": 93,
+					"epsu": 0.1,
+					"epsr": 0.01368036462
+				},
+				{
+					"name": "Steel BE Conf",
+					"type": "steel rebar",
+					"masspervolume": 0.0002810502998,
+					"fy": 63,
+					"E": 29000,
+					"fu": 70
+				}
+			],
+			"framesections": [],
+			"slabsections": [],
+			"decksections": [],
+			"wallsections": [
+				{
+					"name": "Wall",
+					"material": "Concrete",
+					"type": "concrete rectangular wall",
+					"length": 48,
+					"thickness": 4,
+					"boundaryElementLength": 7.5,
+					"longitudinalRebar": {
+						"material": "Steel Web Vert",
+						"numBarsThickness": 2,
+						"barArea": 0.04999474786,
+						"spacing": 7.5,
+						"cover": 0.31
+					},
+					"transverseRebar": {
+						"material": "Steel Web Horz",
+						"numBarsThickness": 2,
+						"barArea": 0.04999474786,
+						"spacing": 7.5,
+						"cover": 0.31
+					},
+					"longitudinalBoundaryElementRebar": {
+						"material": "Steel BE Vert",
+						"numBarsLength": 4,
+						"numBarsThickness": 2,
+						"barArea": 0.1104466167,
+						"cover": 0.31
+					},
+					"transverseBoundaryElementRebar": {
+						"material": "Steel BE Conf",
+						"numBarsLength": 2,
+						"numBarsThickness": 2,
+						"barArea": 0.02761165418,
+						"spacing": 2
+					}
+				}
+			],
+			"connections": [],
+			"panelzones": [],
+			"links": [],
+			"points": []
+		},
+		"geometry": {
+			"columns": [],
+			"beams": [],
+			"braces": [],
+			"floors": [],
+			"walls": [
+				{
+					"name": "W1S1",
+					"cline": [
+						"1",
+						"2"
+					],
+					"floor": [
+						"0",
+						"1"
+					],
+					"segment": [
+						{
+							"section": "Wall",
+							"ratio": [0,1],
+							"angle": 0
+						}
+					]
+				},
+				{
+					"name": "W1S2",
+					"cline": [
+						"1",
+						"2"
+					],
+					"floor": [
+						"1",
+						"2"
+					],
+					"segment": [
+						{
+							"section": "Wall",
+							"ratio": [0,1],
+							"angle": 0
+						}
+					]
+				},
+				{
+					"name": "W1S3",
+					"cline": [
+						"1",
+						"2"
+					],
+					"floor": [
+						"2",
+						"3"
+					],
+					"segment": [
+						{
+							"section": "Wall",
+							"ratio": [0,1],
+							"angle": 0
+						}
+					]
+				},
+				{
+					"name": "W1S4",
+					"cline": [
+						"1",
+						"2"
+					],
+					"floor": [
+						"3",
+						"4"
+					],
+					"segment": [
+						{
+							"section": "Wall",
+							"ratio": [0,1],
+							"angle": 0
+						}
+					]
+				}
+			],
+			"panelzones": [],
+			"links": [],
+			"points": []
+		}
+	},
+	"ExteriorInformation": {
+		"type": null
+	},
+	"ContentInformation": {
+		"type": null
+	}
+}
