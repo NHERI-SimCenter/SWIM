@@ -253,7 +253,11 @@ MainWindow::MainWindow(QWidget *parent) :
     createHeaderBox();
 
     // load
-    //loadAISC();
+    // loadAISC();
+
+    copyDir(QDir(qApp->applicationDirPath()).filePath("ExampleFiles/wallDemo1"),QDir(rootDir).filePath("wallDemo1"),true);
+    copyDir(QDir(qApp->applicationDirPath()).filePath("ExampleFiles/wallDemo2"),QDir(rootDir).filePath("wallDemo2"),true);
+    expDirName = QDir(rootDir).filePath("wallDemo1");
 
     // create input / output panels
     createInputPanel();
@@ -276,6 +280,8 @@ MainWindow::MainWindow(QWidget *parent) :
     int height = this->height()<int(0.75*rec.height())?int(0.75*rec.height()):this->height();
     int width  = this->width()<int(0.85*rec.width())?int(0.85*rec.width()):this->width();
     this->resize(width, height);
+    wwidth = int(round(width*0.7));
+    wheight= int(round(height*0.9));
     //this->setMaximumHeight(100);
 
 
@@ -284,8 +290,14 @@ MainWindow::MainWindow(QWidget *parent) :
     //reset();
 
     inExp->clear();
-    inExp->addItem("wallDemo1", "/Users/simcenter/Codes/SimCenter/SWIM/cpp/ExampleFiles/wallDemo1");
-    inExp->addItem("wallDemo2", "/Users/simcenter/Codes/SimCenter/SWIM/cpp/ExampleFiles/wallDemo2");
+    for (int i=0; i<expNamesList.size(); i++)
+    {
+        inExp->addItem(expNamesList[i], expDirList[i]);
+    }
+    inExp->setCurrentIndex(currentExpInd);
+    connect(inExp,SIGNAL(currentIndexChanged(int)), this, SLOT(inExp_currentIndexChanged(int)));
+
+
 /*
     // access a web page which will increment the usage count for this tool
     manager = new QNetworkAccessManager(this);
@@ -402,57 +414,6 @@ void MainWindow::reset()
     // remove experiment name
     //inExp->clear();
 
-    // initialize QComboBoxes
-    inOrient->setCurrentIndex(0);
-    inSxn->setCurrentIndex(0);
-    inElType->setCurrentIndex(0);
-    inElDist->setCurrentIndex(0);
-    inIM->setCurrentIndex(0);
-    inShape->setCurrentIndex(0);
-    inMat->setCurrentIndex(0);
-    in_conn1->setCurrentIndex(0);
-    in_conn2->setCurrentIndex(0);
-
-    // spin box
-    // reset to trigger valueChanged
-    inNe->setValue(2);
-    inNIP->setValue(5);
-    inNbf->setValue(12);
-    inNd->setValue(1);
-    inNtw->setValue(2);
-    inNtf->setValue(1);
-
-    // reset to trigger valueChanged
-    inLwp->setValue(100.0);
-    inDelta->setValue(0.2);
-    inEs->setValue(29000.0);
-    infy->setValue(55.0);
-
-    // fatigue
-    inm->setValue(0.458);
-    ine0->setValue(0.2);
-    inemin->setValue(1.0e16);
-    inemax->setValue(1.0e16);
-
-    // rigid end elements
-    inRigA_conn1->setValue(10);
-    inRigI_conn1->setValue(10);
-    //
-    inRigA_conn2->setValue(10);
-    inRigI_conn2->setValue(10);
-
-    // other params
-    angle = pi/4;
-
-    // check box
-    matDefault->setChecked(true);
-    matAsymm->setChecked(false);
-    matFat->setChecked(false);
-    connSymm->setChecked(true);
-
-    // initialize experiment
-   //Experiment *exp = new Experiment();
-   //setExp(exp);
 
     // Load default experiments
     // inExp->setCurrentText("TCBF3_W8X28.json");
@@ -1165,6 +1126,138 @@ void MainWindow::loadWallExperimentalFile(const QString &fileName)
 
 void MainWindow::deletePanels()
 {
+    hasResult = false;
+
+    qDeleteAll(mainLayout->children());
+    qDeleteAll(largeLayout->children());
+
+    // create layout and actions
+    mainLayout = new QHBoxLayout();
+    largeLayout = new QVBoxLayout();
+
+
+
+
+    inBox = nullptr;
+    inLay = nullptr;
+
+
+
+
+    // deleting wall wall
+    theWall = nullptr;
+    wallConfigLay = nullptr;
+    wallSAMLay = nullptr;
+    wallBIMLay = nullptr;
+
+    floorSAMs.clear();
+    floorBIMs.clear();
+    steelBoxSAMs.clear();
+    rebarBoxSAMs.clear();
+    concreteBoxSAMs.clear();
+    rcBoxSAMs.clear();
+    matBIMs.clear();
+
+    //QString expDirName = "/Users/simcenter/Codes/SimCenter/SWIM/data/wallDemo";
+    //QString openseespath = "/Users/simcenter/Codes/OpenSees-March2019/bin/opensees";
+    //QDir expDir = QDir(expDirName);
+
+    matSelectorBIM.clear();
+
+    numMatsBIM=0;
+    numFloors=0;
+    currentFloorIDbim = 0;
+    wallLength=0. ;
+    beLength=0. ;
+    webLength=0. ;
+
+    thePreprocessor = nullptr;
+
+
+
+
+    rebarMaterials.clear();
+    concreteMaterials.clear();
+    rcMaterials.clear();
+
+    rct1Edt.clear();
+    rct2Edt.clear();
+    rct3Edt.clear();
+    rcMat1Edt.clear();
+    rcMat2Edt.clear();
+    rcMat3Edt.clear();
+
+    concreteEEdt.clear();
+    concretefpcEdt.clear();
+    concretenuEdt.clear();
+    concretebetaEdt.clear();
+    concreteApEdt.clear();
+    concreteAnEdt.clear();
+    concreteBnEdt.clear();
+
+    rebarSteelMatEdt.clear();
+    rebarAngEdt.clear();
+
+
+    matIDselector_rc = nullptr ;
+    matIDselector_concrete = nullptr ;
+    matIDselector_rebar = nullptr ;// index is rebarID
+    matIDselector_steel = nullptr ;// index is steelID
+
+    matIDList_rc.clear();
+    matIDList_concrete.clear();
+    matIDList_rebar.clear();
+    matIDList_steel.clear();
+
+    rcMatStrList.clear();
+
+    //QStringList steelModelTypes = {"Steel01"};
+
+    matIDList_rc_mat1.clear();
+    matIDList_rc_mat2.clear();
+    matIDList_rc_mat3.clear();
+
+
+    steelTyeEdt.clear();
+    steelEEdt.clear();
+    steelfyEdt.clear();
+    steelbEdt.clear();
+
+    webRCselector.clear();
+    beRCselector.clear();
+
+
+    idFloorEdt_BIM = nullptr ;
+    idFloorEdt_SAM = nullptr ;
+
+    webLay = nullptr;
+
+    eleSizeWebEdt = nullptr;
+    eleSizeBEEdt = nullptr;
+
+    progressbar = nullptr;
+
+    openseesProcess = nullptr;
+
+    openseesErrCount = 0;
+
+    expWall = new ExperimentWall();
+
+    openseespathEdt = nullptr;
+
+
+    dispx.clear();
+    dispy.clear() ;
+
+    inBox = nullptr;
+
+    //original
+    addExp = nullptr;
+    playButton = nullptr;
+
+
+
+
 
 }
 
@@ -1172,14 +1265,18 @@ void MainWindow::deletePanels()
 // read experimental file
 void MainWindow::loadNew()
 {
+    /*
     deletePanels();
     createInputPanel();
     createOutputPanel();
+    */
 }
 
 // read experimental file
-void MainWindow::loadExperimentalFile(const QString &expDirName)
+void MainWindow::loadExperimentalFile(const QString &expDirNametmp)
 {
+    expDirName = expDirNametmp;
+    loadNewBtn_clicked();
 
     /*
     // open files
@@ -1223,8 +1320,57 @@ void MainWindow::loadExperimentalFile(const QString &expDirName)
 
 void MainWindow::loadNewBtn_clicked()
 {
+    deletePanels();
     createInputPanel();
     createOutputPanel();
+
+
+    largeLayout->addLayout(mainLayout);
+
+    // main widget set to screen size
+    QWidget *widget = new QWidget();
+    widget->setLayout(largeLayout);
+    this->setCentralWidget(widget);
+
+    // create footer
+    createFooterBox();
+
+    /*
+    //
+    // adjust size of application window to the available display
+    //
+    QRect rec = QGuiApplication::primaryScreen()->geometry();
+    int height = this->height()<int(0.75*rec.height())?int(0.75*rec.height()):this->height();
+    int width  = this->width()<int(0.85*rec.width())?int(0.85*rec.width()):this->width();
+    this->resize(width, height);
+    //this->setMaximumHeight(100);
+    */
+
+
+    // initialize data
+    initialize();
+    //reset();
+
+    if(openseespath != "" && openseespathEdt->text()=="")
+        openseespathEdt->setText(openseespath);
+
+    inExp->clear();
+    for (int i=0; i<expNamesList.size(); i++)
+    {
+        inExp->addItem(expNamesList[i], expDirList[i]);
+    }
+    inExp->setCurrentIndex(currentExpInd);
+    connect(inExp,SIGNAL(currentIndexChanged(int)), this, SLOT(inExp_currentIndexChanged(int)));
+
+
+    //inExp->setCurrentIndex(1);
+    dPlot->setExpDir(inExp->itemData(inExp->currentIndex()).toString());
+    updateSAMFile();
+    dPlot->plotModel();
+
+
+
+
 }
 
 
@@ -1616,6 +1762,7 @@ void MainWindow::in_conn2_currentIndexChanged(int row)
 
 void MainWindow::inExp_currentIndexChanged(int row) {
   if (row != -1) {
+    currentExpInd = row;
     loadExperimentalFile(inExp->itemData(row).toString());
     //loadWallExperimentalFile(inExp->itemData(row).toString()); // adding wall
   }
@@ -2311,35 +2458,41 @@ void MainWindow::stop_clicked()
 
 // play
 void MainWindow::play_clicked() {
-    if (pause == false) {
-        playButton->setText("Play");
-        playButton->setToolTip(tr("Play simulation and experimental results"));
-        pause = true;
-    } else {
-        if (playButton->text() == QString("Rewind")) {
+    if(hasResult)
+    {
+        if (pause == false) {
             playButton->setText("Play");
             playButton->setToolTip(tr("Play simulation and experimental results"));
-            slider->setValue(0);
-        } else {
-            pause = false;
-            playButton->setText("Pause");
-            playButton->setToolTip(tr("Pause Results"));
-        }
-    }
-    stepCurr = stepCurr >= numSteps ? 0 : stepCurr;
-    
-    // play loop
-    while (pause == false) {
-
-        slider->setValue(stepCurr);
-        QCoreApplication::processEvents();
-        stepCurr++;
-
-        if (stepCurr++ == numSteps) {
             pause = true;
-            playButton->setText("Rewind");
+        } else {
+            if (playButton->text() == QString("Rewind")) {
+                playButton->setText("Play");
+                playButton->setToolTip(tr("Play simulation and experimental results"));
+                slider->setValue(0);
+            } else {
+                pause = false;
+                playButton->setText("Pause");
+                playButton->setToolTip(tr("Pause Results"));
+            }
         }
-    };
+        stepCurr = stepCurr >= numSteps ? 0 : stepCurr;
+
+        // play loop
+        while (pause == false) {
+
+            slider->setValue(stepCurr);
+            QCoreApplication::processEvents();
+            stepCurr++;
+
+            if (stepCurr++ == numSteps) {
+                pause = true;
+                playButton->setText("Rewind");
+            }
+        };
+    }else{
+        QMessageBox::information(this,tr("SWIM Information"), "No results. Click Analyze to run.", tr("I know."));
+    }
+
 }
 
 // pause
@@ -3568,24 +3721,33 @@ void MainWindow::doWallAnalysisOpenSees()
 {
     QString tclFileName = expDirName + "/wall.tcl";
 
+
+
     QFile openseesExefile(openseespath);
 
     if(openseesExefile.exists())
-    {   // do FEA in opensees
-        progressbar->show();
-        updateSAMFile();// update sam file
-        preprocess();//create tcl
+    {
+        if(!QDir(openseespath).exists()){
+            // do FEA in opensees
+            progressbar->show();
+            updateSAMFile();// update sam file
+            preprocess();//create tcl
 
-        // init the opensess process
-        delete openseesProcess;
-        openseesProcess = new QProcess(this);
-        openseesProcess->setWorkingDirectory(expDirName);
-        //connect(openseesProcess, SIGNAL(readyReadStandardOutput()),this,SLOT(onOpenSeesFinished()));
-        connect(openseesProcess, SIGNAL(readyReadStandardError()),this,SLOT(onOpenSeesFinished()));
+            // init the opensess process
+            //delete openseesProcess;
+            openseesProcess = new QProcess(this);
+            openseesProcess->setWorkingDirectory(expDirName);
+            //connect(openseesProcess, SIGNAL(readyReadStandardOutput()),this,SLOT(onOpenSeesFinished()));
+            connect(openseesProcess, SIGNAL(readyReadStandardError()),this,SLOT(onOpenSeesFinished()));
 
-        openseesProcess->start(openseespath,QStringList()<<tclFileName);
-        openseesErrCount = 1;
+            openseesProcess->start(openseespath,QStringList()<<tclFileName);
+            openseesErrCount = 1;
+        }else{
+             QMessageBox::information(this,tr("SWIM Information"), "The path you gave is not ane executable", tr("I know."));
+        }
 
+    } else {
+        QMessageBox::information(this,tr("SWIM Information"), "Please specify FEM engine with OpenSees path.", tr("I know."));
     }
 
 }
@@ -3642,6 +3804,8 @@ void MainWindow::onOpenSeesFinished()
 
             dPlot->setResp(&dispx, &dispy);
             dPlot->plotResponse(0);
+
+            hasResult = true;
 
 
 
@@ -3787,39 +3951,17 @@ void MainWindow::createInputPanel()
                            //"spring with bilinear material" };
 
     // boxes
-    QGroupBox *inBox = new QGroupBox("Input");
+    inBox = new QGroupBox("Input");
 
     // tabs
     QTabWidget *tabWidget = new QTabWidget(this);
-    QWidget *elTab = new QWidget;
-    QWidget *sxnTab = new QWidget;
-    QWidget *matTab = new QWidget;
-    QWidget *connTab = new QWidget;
-    //QWidget *analyTab = new QWidget;
 
 
 
     // layouts
     inLay = new QVBoxLayout;
+
     QGridLayout *expLay = new QGridLayout();
-    QGridLayout *elLay = new QGridLayout();
-    QGridLayout *sxnLay = new QGridLayout();
-    QGridLayout *matLay = new QGridLayout();
-
-
-
-
-    // dynamic labels
-    deltaL = new QLabel;
-    dlabel = new QLabel;
-    bflabel = new QLabel;
-    twlabel = new QLabel;
-    tflabel = new QLabel;
-    Alabel = new QLabel;
-    Ilabel = new QLabel;
-    rlabel = new QLabel;
-    Zlabel = new QLabel;
-    Slabel = new QLabel;
 
     QPushButton *loadNewBtn = new QPushButton("Load new");
     expLay->addWidget(loadNewBtn,0,2);
@@ -3827,10 +3969,7 @@ void MainWindow::createInputPanel()
 
     QPushButton *addExp = new QPushButton("Add Experiment");
     addExp->setToolTip(tr("Load different experiment"));
-    QPushButton *addAISC = new QPushButton("AISC Database");
-    addAISC->setToolTip(tr("Choose brace shape from AISC shapes database v15.0"));
 
-    // experiment bar
     inExp = addCombo(tr("Experiment: "),expList,&blank,expLay,0,0);
     inExp->clear();
     inExp->setToolTip(tr("Experiment name"));
@@ -3841,387 +3980,18 @@ void MainWindow::createInputPanel()
     //FMK inExp->setMinimumWidth(0.6*width/2);
     expLay->setColumnStretch(2,1);
 
-    // element
-    // col-1
-    inElType = addCombo(tr("Element Model: "),elTypeList,&blank,elLay,0,0);
-    inElType->setToolTip(tr("Select element model type"));
-    inLwp = addDoubleSpin(tr("Workpoint Length, Lwp: "),&inch,elLay,1,0);
-    inLwp->setToolTip(tr("Brace length from workpoint-to-workpoint"));
-    inL = addDoubleSpin(tr("Brace Length, L: "),&inch,elLay,2,0);
-    inL->setToolTip(tr("Brace unbraced length"));
-    inNe = addSpin(tr("Number of Sub-Elements, ne: "),&blank,elLay,3,0);
-    inNe->setToolTip(tr("Number of sub-elements along unbraced length"));
-    inNIP = addSpin(tr("Nmber of Integration Points, NIP: "),&blank,elLay,4,0);
-    inNIP->setToolTip(tr("Number of integration points in each element"));
-    inDelta = addDoubleSpin(tr("Camber: "),&percent,elLay,5,0);
-    inDelta->setToolTip(tr("Out-of-plane perturbation to initialize bucking"));
-    elLay->addWidget(deltaL,6,0);
-    // col-2
-    inElDist = addCombo(tr("Sub-Ele Distribution: "),distList,&blank,elLay,7,0);
-    inElDist->setToolTip(tr("How sub-elements are distributed along unbraced length"));
-    inIM = addCombo(tr("Integration Method: "),IMList,&blank,elLay,8,0);
-    inIM->setToolTip(tr("Integration method for each sub-element"));
-    inShape = addCombo(tr("Camber Shape: "),shapeList,&blank,elLay,9,0);
-    inShape->setToolTip(tr("Geometry of initial brace shape"));
-    // stretch
-
-     elLay->addWidget(experimentImage, 10, 0, -1, -1, Qt::AlignCenter);
-   // elLay->setColumnStretch(1,1);
 
 
-    // section
-    inSxn = addCombo(tr("Section: "),sxnList,&blank,sxnLay,0,0);
-    inSxn->setToolTip(tr("Brace shape from AISC database"));
-    sxnLay->addWidget(addAISC,0,1);
-    inOrient = addCombo(tr("Orientation: "),orientList,&blank,sxnLay,1,0);
-    inOrient->setToolTip(tr("Axis of buckling"));
-    // fibers
-    // col-1
-    inNbf = addSpin(tr("# Fiber Flange Width:"),&blank,sxnLay,2,0);
-    inNbf->setToolTip(tr("Number of fibers across flange width"));
-    inNtf = addSpin(tr("# Fiber Flange Thickness:"),&blank,sxnLay,3,0);
-    inNtf->setToolTip(tr("Number of fibers through flange thickness"));
-    inNd = addSpin(tr("# Fiber Web Depth:"),&blank,sxnLay,4,0);
-    inNd->setToolTip(tr("Number of fibers through web depth"));
-    inNtw = addSpin(tr("# Fiber Web Thickness:"),&blank,sxnLay,5,0);
-    inNtw->setToolTip(tr("Number of fibers across web thickness"));
-    // add parameters
-    // col-2
 
 
-    sxnLay->addWidget(Alabel,1,1);
-    sxnLay->addWidget(Ilabel,2,1);
-    sxnLay->addWidget(Zlabel,3,1);
-    sxnLay->addWidget(Slabel,4,1);
-    sxnLay->addWidget(rlabel,5,1);
-    // col-3
-    sxnLay->addWidget(dlabel,1,2);
-    sxnLay->addWidget(bflabel,2,2);
-    sxnLay->addWidget(twlabel,3,2);
-    sxnLay->addWidget(tflabel,4,2);
-    // stretch
-    sxnLay->setColumnStretch(3,1);  
-  //  sxnLay->addWidget(experimentImage, 6, 0, -1, -1, Qt::AlignCenter);
-    
-    // material
-    QFrame *matFrame = new QFrame;
-    QGridLayout *inMatLay = new QGridLayout;
-    inMat = addCombo(tr("Material model: "),matList,&blank,inMatLay,0,0,1,2);
-    inMat->setToolTip(tr("Steel material model"));
-    matFat = addCheck(tr("Include fatigue: "),blank,inMatLay,1,1);
-    matFat->setToolTip(tr("Include low-cycle fatigue material model. Model uses modified "
-			  "rainflow counting algorithm to accumulate damage. Fiber stress "
-			  "becomes zero when fatigue life is exhausted."));
-    matDefault = addCheck(tr("Use defaults: "),blank,inMatLay,2,1);
-    matDefault->setToolTip(tr("Use default values from OpenSees"));
-    // material parameters
-    inEs = addDoubleSpin(tr("E: "),&ksi,inMatLay,1,0);
-    inEs->setToolTip(tr("Initial stiffness (Young's Modulus)"));
-    infy = addDoubleSpin(tr("Fy: "),&ksi,inMatLay,2,0);
-    infy->setToolTip(tr("Material Yield strength"));
-    matFrame->setLayout(inMatLay);
-    matLay->addWidget(matFrame);
-    inMatLay->setColumnStretch(2,1);
-
-    // hardening
-    bBox = new QGroupBox("Kinematic Hardening");
-    QGridLayout *bLay = new QGridLayout();
-    inb = addDoubleSpin(tr("b:   "),&blank,bLay,0,0);
-    inb->setToolTip(tr("Strain hardening ratio (ratio between post-yield tangent and initial elastic tangent)"));
-    bLay->setColumnStretch(1,1);
-    bBox->setLayout(bLay);
-
-    // steel01
-    // Steel01 (int tag, double fy, double E0, double b, double a1, double a2, double a3, double a4)
-    steel01Box = new QGroupBox("Isotropic Hardening");
-    QGridLayout *steel01Lay = new QGridLayout();
-    ina1 = addDoubleSpin(tr("a1: "),&blank,steel01Lay,0,0);
-    ina1->setToolTip(tr("Increase of compression yield envelope as proportion of yield strength after a "
-			"plastic strain of (a2 * fy)/E"));
-    ina2 = addDoubleSpin(tr("a2: "),&blank,steel01Lay,1,0);
-    ina2->setToolTip(tr("Compression plastic yield factor applied in a1"));    
-    ina3 = addDoubleSpin(tr("a3: "),&blank,steel01Lay,0,1);
-    ina3->setToolTip(tr("Increase of tension yield envelope as proportion of yield strength after a "
-			"plastic strain of (a4 * fy)/E"));
-    ina4 = addDoubleSpin(tr("a4: "),&blank,steel01Lay,1,1);
-    ina4->setToolTip(tr("Tension plastic yield factor applied in a3"));
-    steel01Lay->setColumnStretch(1,1);
-    steel01Box->setLayout(steel01Lay);
-
-    // steel02
-    // Steel02 (int tag, double fy, double E0, double b, double R0, double cR1, double cR2, double a1, double a2, double a3, double a4)
-    steel02Box = new QGroupBox("Elastic to hardening transitions");
-    QGridLayout *steel02Lay = new QGridLayout();
-    inR0 = addDoubleSpin(tr("R0: "),&blank,steel02Lay,0,0);
-    inR0->setToolTip(tr("Controls exponential transition from linear elastic to hardening asymptote"));
-    inR1 = addDoubleSpin(tr("r1: "),&blank,steel02Lay,1,0);
-    inR1->setToolTip(tr("Controls exponential transition from linear elastic to hardening asymptote"));    
-    inR2 = addDoubleSpin(tr("r2: "),&blank,steel02Lay,2,0);
-    inR2->setToolTip(tr("Controls exponential transition from linear elastic to hardening asymptote"));    
-    steel02Lay->setColumnStretch(1,1);
-    steel02Box->setLayout(steel02Lay);
-
-    // steel4
-    // Steel4 ($matTag $f_y $E_0 < -asym > < -kin $b_k $R_0 $r_1 $r_2 < $b_kc $R_0c $r_1c $r_2c > > < -iso $b_i $rho_i $b_l $R_i $l_yp < $b_ic $rho_ic $b_lc $R_ic> > < -ult $f_u $R_u < $f_uc $R_uc > > < -init $sig_init > < -mem $cycNum >)
-    steel4Frame = new QFrame;
-    QGridLayout *steel4Lay = new QGridLayout();
-    matAsymm = addCheck(blank,tr("Asymmetric"),steel4Lay,0,0);
-    matAsymm->setToolTip(tr("Assume non-symmetric behavior to control material response in tension "
-			    "and compression with different parameters"));
-
-    // kinematic hardening
-    kinBox = new QGroupBox("Kinematic Hardening");
-    QHBoxLayout *kinLay = new QHBoxLayout;
-    // tension
-    QGroupBox *tKinBox = new QGroupBox("Tension");
-    QGridLayout *tKinLay = new QGridLayout();
-    inbk = addDoubleSpin(tr("b: "),&blank,tKinLay,0,0);
-    inbk->setToolTip(tr("Kinematic hardening ratio"));
-    inR0k = addDoubleSpin(tr("R0: "),&blank,tKinLay,1,0);
-    inR0k->setToolTip(tr("Controls exponential transition from linear elastic to hardening asymptote"));    
-    inr1 = addDoubleSpin(tr("r1: "),&blank,tKinLay,2,0);
-    inr1->setToolTip(tr("Controls exponential transition from linear elastic to hardening asymptote"));        
-    inr2 = addDoubleSpin(tr("r2: "),&blank,tKinLay,3,0);
-    inr2->setToolTip(tr("Controls exponential transition from linear elastic to hardening asymptote"));
-    tKinLay->setColumnStretch(1,1);
-    tKinBox->setLayout(tKinLay);
-    kinLay->addWidget(tKinBox);
-    // compression
-    cKinBox = new QGroupBox("Compression");
-    QGridLayout *cKinLay = new QGridLayout();
-    inbkc = addDoubleSpin(tr("b: "),&blank,cKinLay,0,0);
-    inbkc->setToolTip(tr("Kinematic hardening ratio"));    
-    inR0kc = addDoubleSpin(tr("R0: "),&blank,cKinLay,1,0);
-    inR0kc->setToolTip(tr("Controls exponential transition from linear elastic to hardening asymptote"));        
-    inr1c = addDoubleSpin(tr("r1: "),&blank,cKinLay,2,0);
-    inr1c->setToolTip(tr("Controls exponential transition from linear elastic to hardening asymptote"));        
-    inr2c = addDoubleSpin(tr("r2: "),&blank,cKinLay,3,0);
-    inr2c->setToolTip(tr("Controls exponential transition from linear elastic to hardening asymptote"));
-    cKinLay->setColumnStretch(1,1);
-    cKinBox->setLayout(cKinLay);
-    kinLay->addWidget(cKinBox);
-    kinBox->setLayout(kinLay);
-
-    // isotropic hardening
-    isoBox = new QGroupBox("Isotropic Hardening");
-    QHBoxLayout *isoLay = new QHBoxLayout;
-    // tension
-    QGroupBox *tIsoBox = new QGroupBox("Tension");
-    QGridLayout *tIsoLay = new QGridLayout();
-    inbi = addDoubleSpin(tr("b: "),&blank,tIsoLay,0,0);
-    inbi->setToolTip(tr("Initial isotropic hardening ratio"));
-    inrhoi = addDoubleSpin(tr("rho: "),&blank,tIsoLay,1,0);
-    inrhoi->setToolTip(tr("Position of the intersection point between initial and saturated hardening asymptotes"));
-    inbl = addDoubleSpin(tr("bl: "),&blank,tIsoLay,2,0);
-    inbl->setToolTip(tr("Saturated hardening ratio"));
-    inRi = addDoubleSpin(tr("Ri: "),&blank,tIsoLay,3,0);
-    inRi->setToolTip(tr("Controls exponential transition from initial to saturated asymptotes"));
-    inlyp = addDoubleSpin(tr("lyp: "),&blank,tIsoLay,4,0);
-    inlyp->setToolTip(tr("Length of yield plateau"));
-    tIsoLay->setColumnStretch(1,1);
-    tIsoBox->setLayout(tIsoLay);
-    isoLay->addWidget(tIsoBox);
-    // compression
-    cIsoBox = new QGroupBox("Compression");
-    QGridLayout *cIsoLay = new QGridLayout();
-    inbic = addDoubleSpin(tr("b: "),&blank,cIsoLay,0,0);
-    inbic->setToolTip(tr("Initial isotropic hardening ratio"));
-    inrhoic = addDoubleSpin(tr("rho: "),&blank,cIsoLay,1,0);
-    inrhoic->setToolTip(tr("Position of the intersection point between initial and saturated hardening asymptotes"));
-    inblc = addDoubleSpin(tr("bl: "),&blank,cIsoLay,2,0);
-    inblc->setToolTip(tr("Saturated hardening ratio"));
-    inRic = addDoubleSpin(tr("Ri: "),&blank,cIsoLay,3,0);
-    inRic->setToolTip(tr("Controls exponential transition from initial to saturated asymptotes"));
-    cIsoLay->setColumnStretch(1,1);
-    cIsoLay->setRowStretch(4,1);
-    cIsoBox->setLayout(cIsoLay);
-    isoLay->addWidget(cIsoBox);
-    isoBox->setLayout(isoLay);
-
-    // add widgets
-    steel4Lay->addWidget(matAsymm,0,0);
-    steel4Lay->addWidget(kinBox,1,0,1,3);
-    steel4Lay->addWidget(isoBox,2,0,1,3);
-    steel4Lay->setColumnStretch(1,1);
-    steel4Frame->setLayout(steel4Lay);
-
-    // add layouts
-    matLay->addWidget(bBox,4,0,1,3);
-    matLay->addWidget(steel02Box,5,0,1,3);
-    matLay->addWidget(steel01Box,6,0,1,3);
-    matLay->addWidget(steel4Frame,4,0,1,3);
-
-    // fatigue parameters
-    fatBox = new QGroupBox("Fatigue");
-    QGridLayout *fatLay = new QGridLayout();
-    inm = addDoubleSpin(tr("m: -"),&blank,fatLay,0,0);
-    inm->setToolTip(tr("Slope of Coffin-Manson curve in log-log space"));
-    ine0 = addDoubleSpin(tr("e0: "),&blank,fatLay,1,0);
-    ine0->setToolTip(tr("Value of strain at which one cycle will cause failure"));
-    inemin = addDoubleSpin(tr("emin: -"),&blank,fatLay,0,1);
-    inemin->setToolTip(tr("Global minimum value of strain or deformation"));
-    inemax = addDoubleSpin(tr("emax: "),&blank,fatLay,1,1);
-    inemax->setToolTip(tr("Global maximim value of strain or deformation"));
-    fatLay->setColumnStretch(2,1);
-    fatBox->setLayout(fatLay);
-
-    // add layouts
-    fatBox->setVisible(true);
-    matLay->addWidget(fatBox,7,0,1,3);
-
-    // stretch
-    matLay->setColumnStretch(4,1);
-
-    // connections
-    QGridLayout *connLay = new QGridLayout();
-    //connSymm = addCheck(blank,tr("Symmetric connections"),connLay,0,0);
-    QHBoxLayout *connSymLayout = new QHBoxLayout();
-    QLabel *labelSymm = new QLabel(tr("Symmetric Connections"));
-    connSymm = new QCheckBox();
-    connSymLayout->addStretch();
-    connSymLayout->addWidget(labelSymm);
-    connSymLayout->addWidget(connSymm);
-
-    connSymm->setToolTip(tr("Set Connection-2 to be the same as Connection-1"));
-    connLay->addLayout(connSymLayout,0,1);
-
-    // connection-1
-    QGroupBox *conn1Box = new QGroupBox("Connection-1");
-    QGridLayout *conn1Lay = new QGridLayout();
-    in_conn1 = addCombo(tr("Model: "),connList,&blank,conn1Lay,0,0);
-    conn1Lay->setColumnStretch(1,1);
 
 
-    // mat
-    /*
-    QGroupBox *conn1matBox = new QGroupBox("Material");
-    QGridLayout *conn1matLay = new QGridLayout();
-    infy_conn1 = addDoubleSpin(tr("fy: "),&ksi,conn1matLay,0,0);
-    inEs_conn1 = addDoubleSpin(tr("Es: "),&ksi,conn1matLay,1,0);
-    inb_conn1 = addDoubleSpin(tr("b: "),&blank,conn1matLay,2,0);
-    conn1matLay->setColumnStretch(1,1);
-    conn1matBox->setLayout(conn1matLay);
-    conn1Lay->addWidget(conn1matBox,1,0);
-    */
-    // geom
-    QGroupBox *conn1geoBox = new QGroupBox("Gusset geometry");
-    QGridLayout *conn1geoLay = new QGridLayout();
-    //intg_conn1 = addDoubleSpin(tr("thickness: "),&inch,conn1geoLay,0,0);
-    inl_conn1 = addDoubleSpin(tr("length: "),&inch,conn1geoLay,1,0);
-    inl_conn1->setToolTip(tr("Length from workpoint to beginning/end of unbraced length"));
-    //inlw_conn1 = addDoubleSpin(tr("width: "),&inch,conn1geoLay,2,0);
-    conn1geoLay->setColumnStretch(1,1);
-    conn1geoBox->setLayout(conn1geoLay);
-    conn1Lay->addWidget(conn1geoBox,2,0);
-    // rigid end elements
-    QGroupBox *conn1rigBox = new QGroupBox("Rigid multiplier");
-    QGridLayout *conn1rigLay = new QGridLayout();
-    inRigA_conn1 = addDoubleSpin(tr("A: "),&blank,conn1rigLay,0,0);
-    inRigA_conn1->setToolTip(tr("Multiplies area of elastic end element to represent relative rigidity of "
-				"connection to brace: A<sub>conn</sub>/A<sub>brace</sub>"));
-    inRigI_conn1 = addDoubleSpin(tr("I: "),&blank,conn1rigLay,1,0);
-    inRigI_conn1->setToolTip(tr("Multiplies moment of inertia of elastic end element to represent relative"
-                " rigidity of connection to brace: <sub>Iconn</sub>/I<sub>brace</sub>"));
-    conn1rigLay->setColumnStretch(1,1);
-    conn1rigBox->setLayout(conn1rigLay);
-    conn1Lay->addWidget(conn1rigBox,3,0);
-    // add to layout
-    conn1Box->setLayout(conn1Lay)
-            ;
-    connLay->addWidget(conn1Box,1,0);
 
-    // connection-2
-    QGroupBox *conn2Box = new QGroupBox("Connection-2");
-    QGridLayout *conn2Lay = new QGridLayout();
-    in_conn2 = addCombo(tr("Model: "),connList,&blank,conn2Lay,0,0);
-    conn2Lay->setColumnStretch(1,1);
-    // mat
-    /*
-    QGroupBox *conn2matBox = new QGroupBox("Material");
-    QGridLayout *conn2matLay = new QGridLayout();
-    infy_conn2 = addDoubleSpin(tr("fy: "),&ksi,conn2matLay,0,0);
-    inEs_conn2 = addDoubleSpin(tr("Es: "),&ksi,conn2matLay,1,0);
-    inb_conn2 = addDoubleSpin(tr("b: "),&blank,conn2matLay,2,0);
-    conn2matLay->setColumnStretch(1,1);
-    conn2matBox->setLayout(conn2matLay);
-    conn2Lay->addWidget(conn2matBox,1,0);
-    */
-    // geom
-    QGroupBox *conn2geoBox = new QGroupBox("Gusset geometry");
-    QGridLayout *conn2geoLay = new QGridLayout();
-    //intg_conn2 = addDoubleSpin(tr("thickness: "),&inch,conn2geoLay,0,0);
-    inl_conn2 = addDoubleSpin(tr("length: "),&inch,conn2geoLay,1,0);
-    inl_conn2->setToolTip(tr("Length from workpoint to beginning/end of unbraced length"));    
-    //inlw_conn2 = addDoubleSpin(tr("width: "),&inch,conn2geoLay,2,0);
-    conn2geoLay->setColumnStretch(1,1);
-    conn2geoBox->setLayout(conn2geoLay);
-    conn2Lay->addWidget(conn2geoBox,2,0);
-    // rigid end elements
-    QGroupBox *conn2rigBox = new QGroupBox("Rigid multiplier");
-    QGridLayout *conn2rigLay = new QGridLayout();
-    inRigA_conn2 = addDoubleSpin(tr("A: "),&blank,conn2rigLay,0,0);
-    inRigA_conn2->setToolTip(tr("Multiplies area of elastic end element to represent relative rigidity of "
-				"connection to brace: A<sub>conn</sub>/A<sub>brace</sub>"));    
-    inRigI_conn2 = addDoubleSpin(tr("I: "),&blank,conn2rigLay,1,0);
-    inRigI_conn2->setToolTip(tr("Multiplies moment of inertia of elastic end element to represent relative"
-                " rigidity of connection to brace: I<sub>conn</sub>/I<sub>brace</sub>"));
-    conn2rigLay->setColumnStretch(1,1);
-    conn2rigBox->setLayout(conn2rigLay);
-    conn2Lay->addWidget(conn2rigBox,3,0);
-    // add to layout
-    conn2Box->setLayout(conn2Lay);
-    connLay->addWidget(conn2Box,1,1);
 
-    // el limits
-    setLimits(inLwp, 1, 10000, 2, 1);
-    setLimits(inL, 1, 10000, 2, 1);
-    inL->setEnabled(false);
-    setLimits(inNe, 1, 100);
-    setLimits(inNIP, 1, 10);
-    setLimits(inDelta, 0, 10000, 3, 0.001);
-    // sxn limits
-    setLimits(inNbf, 1, 100);
-    setLimits(inNtf, 1, 100);
-    setLimits(inNd, 1, 100);
-    setLimits(inNtw, 1, 100);
-    // mat limits
-    setLimits(inEs, 1, 100000, 1, 1000);
-    setLimits(infy, 1, 200, 1, 1);
-    //
-    setLimits(inb, 0, 1, 5, 0.00001);
-    setLimits(inbk, 0, 1, 5, 0.00001);
-    setLimits(inbkc, 0, 1, 5, 0.00001);
-    setLimits(inbi, 0, 1, 5, 0.00001);
-    setLimits(inbic, 0, 1, 5, 0.00001);
-    setLimits(inbl, 0, 1, 5, 0.00001);
-    setLimits(inblc, 0, 1, 5, 0.00001);
-    //
-    setLimits(ina1, 0, 100, 2, 0.1);
-    setLimits(ina2, 0, 100, 2, 0.1);
-    setLimits(ina3, 0, 100, 2, 0.1);
-    setLimits(ina4, 0, 100, 2, 0.1);
-    //
-    setLimits(inR0, 0, 50, 1);
-    setLimits(inR0k, 0, 50, 1);
-    setLimits(inR0kc, 0, 50, 1);
-    setLimits(inRi, 0, 50, 1);
-    setLimits(inRic, 0, 50, 1);
-    //
-    setLimits(inR1, 0, 1, 3, 0.01);
-    setLimits(inR2, 0, 1, 3, 0.01);
-    setLimits(inr1, 0, 1, 3, 0.01);
-    setLimits(inr2, 0, 1, 3, 0.01);
-    setLimits(inr1c, 0, 1, 3, 0.01);
-    setLimits(inr2c, 0, 1, 3, 0.01);
-    //
-    setLimits(inrhoi, 0, 5, 3, 0.01);
-    setLimits(inrhoic, 0, 5, 3, 0.01);
-    setLimits(inlyp, 0, 10, 3, 0.01);
-    //
-    setLimits(inm, 0, 100, 3, 0.001);
-    setLimits(ine0, 0, 100, 3, 0.001);
-    setLimits(inemin, 0, 100, 3, 0.001);
-    setLimits(inemax, 0, 100, 3, 0.001);
+
+
+
+
 
     // buttons
     // buttons
@@ -4252,15 +4022,6 @@ void MainWindow::createInputPanel()
 
     // set tab layouts
     inLay->addLayout(expLay);
-    elTab->setLayout(elLay);
-    elLay->setRowStretch(elLay->rowCount(),1);
-    sxnTab->setLayout(sxnLay);
-    sxnLay->setRowStretch(sxnLay->rowCount(),1);
-    matTab->setLayout(matLay);
-    matLay->setRowStretch(matLay->rowCount(),1);
-    connTab->setLayout(connLay);
-    connLay->setRowStretch(connLay->rowCount(),1);
-
 
     /*
      * ---------------------------------------------------
@@ -4391,17 +4152,23 @@ void MainWindow::createInputPanel()
     // add to main layout
     inBox->setLayout(inLay);
 
+
     QScrollArea *inscrollArea = new QScrollArea;
     //inscrollArea->setBackgroundRole(QPalette::Dark);
     inscrollArea->setWidget(inBox);
     rec = QGuiApplication::primaryScreen()->geometry();
-    int wheight = this->height()<int(0.55*rec.height())?int(0.55*rec.height()):this->height();
-    int wwidth  = this->width()<int(0.55*rec.width())?int(0.55*rec.width()):this->width();
+    if(wheight<0.1)
+    {
+        wheight = this->height()<int(0.55*rec.height())?int(0.55*rec.height()):this->height();
+        wwidth  = this->width()<int(0.55*rec.width())?int(0.55*rec.width()):this->width();
+    }
     inscrollArea->setMinimumSize(wwidth, wheight);
+    inscrollArea->setMaximumSize(wwidth*2, wheight*2);
     //inscrollArea->resize(wwidth, wheight);
-
-
     mainLayout->addWidget(inscrollArea, 0);
+
+
+    //mainLayout->addWidget(inBox, 0);
 
 
 
@@ -4410,7 +4177,7 @@ void MainWindow::createInputPanel()
     // connect signals / slots
     // buttons
     connect(addExp,SIGNAL(clicked()), this, SLOT(addExp_clicked()));
-    connect(addAISC,SIGNAL(clicked()), this, SLOT(addAISC_clicked()));
+
     connect(reset,SIGNAL(clicked()), this, SLOT(reset()));
     //connect(run,SIGNAL(clicked()), this, SLOT(doAnalysis()));
     //connect(run,SIGNAL(clicked()), this, SLOT(doWallAnalysis()));
@@ -4421,87 +4188,12 @@ void MainWindow::createInputPanel()
     //connect(restart,SIGNAL(clicked()), this, SLOT(restart_clicked()));
     connect(exitApp,SIGNAL(clicked()), this, SLOT(exit_clicked()));
 
-    // Combo Box
-    connect(inSxn,SIGNAL(currentIndexChanged(int)), this, SLOT(inSxn_currentIndexChanged(int)));
-    connect(inOrient,SIGNAL(currentIndexChanged(int)), this, SLOT(inOrient_currentIndexChanged(int)));
-    connect(inElType,SIGNAL(currentIndexChanged(int)), this, SLOT(inElType_currentIndexChanged(int)));
-    connect(inElDist,SIGNAL(currentIndexChanged(int)), this, SLOT(inElDist_currentIndexChanged(int)));
-    connect(inIM,SIGNAL(currentIndexChanged(int)), this, SLOT(inIM_currentIndexChanged(int)));
-    connect(inShape,SIGNAL(currentIndexChanged(int)), this, SLOT(inShape_currentIndexChanged(int)));
-    connect(inMat,SIGNAL(currentIndexChanged(int)), this, SLOT(inMat_currentIndexChanged(int)));
-    connect(in_conn1,SIGNAL(currentIndexChanged(int)), this, SLOT(in_conn1_currentIndexChanged(int)));
-    connect(in_conn2,SIGNAL(currentIndexChanged(int)), this, SLOT(in_conn2_currentIndexChanged(int)));
-    connect(inExp, SIGNAL(currentIndexChanged(int)), this, SLOT(inExp_currentIndexChanged(int)));
 
-    // Spin box
-    connect(inNe,SIGNAL(valueChanged(int)), this, SLOT(inNe_valueChanged(int)));
-    connect(inNIP,SIGNAL(valueChanged(int)), this, SLOT(inNIP_valueChanged(int)));
-    connect(inNbf,SIGNAL(valueChanged(int)), this, SLOT(inNbf_valueChanged(int)));
-    connect(inNtf,SIGNAL(valueChanged(int)), this, SLOT(inNtf_valueChanged(int)));
-    connect(inNd,SIGNAL(valueChanged(int)), this, SLOT(inNd_valueChanged(int)));
-    connect(inNtw,SIGNAL(valueChanged(int)), this, SLOT(inNtw_valueChanged(int)));
-
-    // double spin box
-    connect(inLwp,SIGNAL(valueChanged(double)), this, SLOT(inLwp_valueChanged(double)));
-    connect(inL,SIGNAL(valueChanged(double)), this, SLOT(inL_valueChanged(double)));
-    connect(inDelta,SIGNAL(valueChanged(double)), this, SLOT(inDelta_valueChanged(double)));
-    //
-    connect(inEs,SIGNAL(valueChanged(double)), this, SLOT(inEs_valueChanged(double)));
-    connect(infy,SIGNAL(valueChanged(double)), this, SLOT(infy_valueChanged(double)));
-    //
-    connect(inb,SIGNAL(valueChanged(double)), this, SLOT(inb_valueChanged(double)));
-    //
-    connect(ina1,SIGNAL(valueChanged(double)), this, SLOT(ina1_valueChanged(double)));
-    connect(ina2,SIGNAL(valueChanged(double)), this, SLOT(ina2_valueChanged(double)));
-    connect(ina3,SIGNAL(valueChanged(double)), this, SLOT(ina3_valueChanged(double)));
-    connect(ina4,SIGNAL(valueChanged(double)), this, SLOT(ina4_valueChanged(double)));
-    //
-    connect(inR0,SIGNAL(valueChanged(double)), this, SLOT(inR0_valueChanged(double)));
-    connect(inR1,SIGNAL(valueChanged(double)), this, SLOT(inR1_valueChanged(double)));
-    connect(inR2,SIGNAL(valueChanged(double)), this, SLOT(inR2_valueChanged(double)));
-    //
-    connect(inbk,SIGNAL(valueChanged(double)), this, SLOT(inbk_valueChanged(double)));
-    connect(inR0k,SIGNAL(valueChanged(double)), this, SLOT(inR0k_valueChanged(double)));
-    connect(inr1,SIGNAL(valueChanged(double)), this, SLOT(inr1_valueChanged(double)));
-    connect(inr2,SIGNAL(valueChanged(double)), this, SLOT(inr2_valueChanged(double)));
-    connect(inbkc,SIGNAL(valueChanged(double)), this, SLOT(inbkc_valueChanged(double)));
-    connect(inR0kc,SIGNAL(valueChanged(double)), this, SLOT(inR0kc_valueChanged(double)));
-    connect(inr1c,SIGNAL(valueChanged(double)), this, SLOT(inr1c_valueChanged(double)));
-    connect(inr2c,SIGNAL(valueChanged(double)), this, SLOT(inr2c_valueChanged(double)));
-    //
-    connect(inbi,SIGNAL(valueChanged(double)), this, SLOT(inbi_valueChanged(double)));
-    connect(inrhoi,SIGNAL(valueChanged(double)), this, SLOT(inrhoi_valueChanged(double)));
-    connect(inbl,SIGNAL(valueChanged(double)), this, SLOT(inbl_valueChanged(double)));
-    connect(inRi,SIGNAL(valueChanged(double)), this, SLOT(inRi_valueChanged(double)));
-    connect(inlyp,SIGNAL(valueChanged(double)), this, SLOT(inlyp_valueChanged(double)));
-    connect(inbic,SIGNAL(valueChanged(double)), this, SLOT(inbic_valueChanged(double)));
-    connect(inrhoic,SIGNAL(valueChanged(double)), this, SLOT(inrhoic_valueChanged(double)));
-    connect(inblc,SIGNAL(valueChanged(double)), this, SLOT(inblc_valueChanged(double)));
-    connect(inRic,SIGNAL(valueChanged(double)), this, SLOT(inRic_valueChanged(double)));
-    //
-    connect(inm,SIGNAL(valueChanged(double)), this, SLOT(inm_valueChanged(double)));
-    connect(ine0,SIGNAL(valueChanged(double)), this, SLOT(ine0_valueChanged(double)));
-    connect(inemin,SIGNAL(valueChanged(double)), this, SLOT(inemin_valueChanged(double)));
-    connect(inemax,SIGNAL(valueChanged(double)), this, SLOT(inemax_valueChanged(double)));
-    //
-    connect(inl_conn1,SIGNAL(valueChanged(double)), this, SLOT(inl_conn1_valueChanged(double)));
-    connect(inRigA_conn1,SIGNAL(valueChanged(double)), this, SLOT(inRigA_conn1_valueChanged(double)));
-    connect(inRigI_conn1,SIGNAL(valueChanged(double)), this, SLOT(inRigI_conn1_valueChanged(double)));
-    //
-    connect(inl_conn2,SIGNAL(valueChanged(double)), this, SLOT(inl_conn2_valueChanged(double)));
-    connect(inRigA_conn2,SIGNAL(valueChanged(double)), this, SLOT(inRigA_conn2_valueChanged(double)));
-    connect(inRigI_conn2,SIGNAL(valueChanged(double)), this, SLOT(inRigI_conn2_valueChanged(double)));
-
-    // check box
-    connect(matFat, SIGNAL(stateChanged(int)), this, SLOT(matFat_checked(int)));
-    connect(matDefault, SIGNAL(stateChanged(int)), this, SLOT(matDefault_checked(int)));
-    connect(matAsymm, SIGNAL(stateChanged(int)), this, SLOT(matAsymm_checked(int)));
-    connect(connSymm, SIGNAL(stateChanged(int)), this, SLOT(connSymm_checked(int)));
 }
 
 void MainWindow::ESize_valueChanged_SAM(double esize)
 {
-
+    hasResult = false;
      if (dPlot != nullptr)
      {
          updateSAMFile();
@@ -5042,11 +4734,12 @@ void MainWindow::createSAMui()
     floorLay->setRowStretch(3,1);
     floorBox->setLayout(floorLay);
 
-
-
     wallSAMLay->addWidget(floorBox,1+1+1,0,1,1);
 
     floorSAMs.append(floorBox);
+
+    openseespathEdt = addLineEdit("FEM engine", "", wallSAMLay,1+1+1+1,0);
+    connect(openseespathEdt, SIGNAL(textChanged(QString)), this, SLOT(openseespathEdt_textChanged(QString)));
 
 
     //wallSAMLay->setRowStretch(1,1);
@@ -5059,6 +4752,11 @@ void MainWindow::createSAMui()
     floorSAMs[0]->show();
     */
 
+}
+
+void MainWindow::openseespathEdt_textChanged(QString newPath)
+{
+    openseespath = newPath;
 }
 
 std::vector<float> MainWindow::getAIinputs()
@@ -5386,6 +5084,7 @@ void MainWindow::steelSelector_valueChanged_SAM(QString steelIDStr)
 
 void MainWindow::createBIMui()
 {
+
     // create SAM ui
     QString blank(tr(" "));
     QString inch(tr("inch "));
@@ -5502,7 +5201,7 @@ void MainWindow::createBIMui()
         //theWallSections_itr++;
         layoutBIMWebBox_long->setLayout(layoutBIMWebLay_long);
 
-        layoutBIMBox->hide();
+        //layoutBIMBox->hide();
 
 
 
@@ -5645,11 +5344,20 @@ void MainWindow::createOutputPanel()
     // Tab Widget containing axial, moment & soon to be curvature!
     //
 
-    QTabWidget *tabWidget = new QTabWidget(this);
+    QGroupBox *dPlotBox = new QGroupBox("Shape");
+    QVBoxLayout *dPlotLay = new QVBoxLayout();
+    dPlot = new deformWidget(tr("Length, Lwp"), tr("Deformation"));
+    dPlot->setExpDir(expDirName);
+    dPlotLay->addWidget(dPlot,1);
+    dPlotBox->setLayout(dPlotLay);
 
+
+/*
+    QTabWidget *tabWidget = new QTabWidget(this);
     // deformed shape plot
     dPlot = new deformWidget(tr("Length, Lwp"), tr("Deformation"));
     tabWidget->addTab(dPlot, "Shape");
+    */
 
     /*
     // axial force plot
@@ -5676,10 +5384,8 @@ void MainWindow::createOutputPanel()
     dispAndTabLayout->addWidget(tabWidget,1);
     outputLayout->addLayout(dispAndTabLayout,0.2);
     */
-    outputLayout->addWidget(tabWidget,2);
-
-
-    outputLayout->addWidget(hystBox,6);
+    outputLayout->addWidget(dPlotBox,4);
+    outputLayout->addWidget(hystBox,4);
     outputLayout->addWidget(tBox,2);
 
 
@@ -5937,4 +5643,37 @@ QSpinBox *addSpin(QString text, QString *unitText,
 void MainWindow::replyFinished(QNetworkReply *pReply)
 {
     return;
+}
+
+bool MainWindow::copyDir(const QDir& from, const QDir& to, bool cover=true)
+{
+
+    if (!to.exists())
+        {
+        if (!to.mkdir(to.absolutePath()))
+            return false;
+    } else {
+
+    }
+
+    QFileInfoList fileInfoList = from.entryInfoList();
+    foreach(QFileInfo fileInfo, fileInfoList)
+    {
+        if (fileInfo.fileName() == "." || fileInfo.fileName() == "..")
+            continue;
+
+        if (fileInfo.isDir()){
+            if (!copyDir(fileInfo.filePath(), to.filePath(fileInfo.fileName())))
+                return false;
+        }
+        else{
+            if (cover && to.exists(fileInfo.fileName())){
+                //to.remove(fileInfo.fileName());
+            }
+            if (!QFile::copy(fileInfo.filePath(), to.filePath(fileInfo.fileName()))){
+                return false;
+            }
+        }
+    }
+    return true;
 }

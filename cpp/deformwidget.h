@@ -99,6 +99,10 @@ public:
     void plotResponse(int t = 0);
     void plotResponse_old(int t = 0);
     void putSomeColorInMesh();
+    void setExpDir(QString tmDir){expDirName = tmDir;}
+    QString expDirName = "";
+    double wallw = 0.0;
+    double wallh = 0.0;
 };
 
 #endif // DEFORMWIDGET_H

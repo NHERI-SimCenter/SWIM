@@ -179,7 +179,7 @@ void deformWidget::plotModel()
     thePlot->graph(0)->setData(*xi,*yi,true);
     */
 
-    QString expDirName = "/Users/simcenter/Codes/SimCenter/SWIM/data/wallDemo";
+
     QString samFileName = expDirName + "/SAM.json";
     QString in;
     QFile inputFile(samFileName);
@@ -197,6 +197,8 @@ void deformWidget::plotModel()
     QJsonObject samRoot, SAM, geometry;
     QJsonArray nodesJ;
     QJsonDocument indoc = QJsonDocument::fromJson(in.toUtf8());
+    wallw = 0.0;
+    wallh = 0.0;
     //qWarning() << indoc.isNull();
     if (indoc.isNull())
     {
@@ -217,6 +219,8 @@ void deformWidget::plotModel()
             loc.push_back({thisNodex,thisNodey});
             xs.push_back(thisNodex);
             ys.push_back(thisNodey);
+            if(thisNodex>wallw) wallw = thisNodex;
+            if(thisNodey>wallh) wallh = thisNodey;
         }
     }
 
@@ -320,8 +324,8 @@ void deformWidget::plotModel()
     thePlot->yAxis->setRange(minY-1,maxY+1);
     */
     // axes
-    thePlot->xAxis->setRange(0-10,0+200);
-    thePlot->yAxis->setRange(0-10,0+200);
+    thePlot->xAxis->setRange(0-10,0+wallw+10);
+    thePlot->yAxis->setRange(0-10,0+wallh+10);
 
     // update plot
     thePlot->replot(QCustomPlot::rpQueuedReplot);
@@ -392,8 +396,8 @@ void deformWidget::plotResponse_old(int t)
     thePlot->graph(0)->setData(*xt,*yt,true);
 
     // axes
-    thePlot->xAxis->setRange(minX-10,maxX+10);
-    thePlot->yAxis->setRange(minY-1,maxY+1);
+    thePlot->xAxis->setRange(0-10,0+wallw+10);
+    thePlot->yAxis->setRange(0-10,0+wallh+10);
 
     // update plot
     thePlot->replot(QCustomPlot::rpQueuedReplot);
@@ -471,8 +475,8 @@ void deformWidget::plotResponse(int t)
     thePlot->yAxis->setRange(minY-1,maxY+1);
     */
     // axes
-    thePlot->xAxis->setRange(0-10,0+200);
-    thePlot->yAxis->setRange(0-10,0+200);
+    thePlot->xAxis->setRange(0-10,0+wallw+10);
+    thePlot->yAxis->setRange(0-10,0+wallh+10);
 
     // update plot
     thePlot->replot(QCustomPlot::rpQueuedReplot);

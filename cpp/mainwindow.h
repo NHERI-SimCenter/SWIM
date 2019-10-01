@@ -267,6 +267,8 @@ private slots:
     void loadNew();
     void loadNewBtn_clicked();
     void deletePanels();
+    void openseespathEdt_textChanged(QString);
+    bool copyDir(const QDir& from, const QDir& to, bool cover);
 
 
     // Combo Box
@@ -624,8 +626,8 @@ private:
     QMap<int, QGroupBox*> concreteBoxSAMs;
     QMap<int, QGroupBox*> rcBoxSAMs;
     QVector<QVector<QGroupBox*>> matBIMs;
-    QString expDirName = "/Users/simcenter/Codes/SimCenter/SWIM/data/wallDemo";
-    QString openseespath = "/Users/simcenter/Codes/OpenSees-March2019/bin/opensees";
+    QString expDirName = "";
+    QString openseespath = "";
 
     QDir expDir = QDir(expDirName);
     QVector<QComboBox*> matSelectorBIM;
@@ -716,6 +718,20 @@ private:
 
     std::vector<std::vector<double>> dispx ;
     std::vector<std::vector<double>> dispy ;
+
+    QGroupBox *inBox;
+
+    QLineEdit *openseespathEdt;
+
+    bool hasResult = false;
+
+    QStringList expNamesList={"wallDemo1", "wallDemo2"};
+    QStringList expDirList={QDir(rootDir).filePath("wallDemo1"),QDir(rootDir).filePath("wallDemo2")};
+    int currentExpInd = 0;
+
+    int wwidth, wheight;
+
+
 
 signals:
     void signalProgress(int);
