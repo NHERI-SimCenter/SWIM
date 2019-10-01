@@ -111,7 +111,7 @@ hysteresisWidget::~hysteresisWidget()
 
 void hysteresisWidget::setModel(QVector<double> *data_x, QVector<double> *data_y)
 {
-    size = data_x->size();
+    size = int(data_x->size());
 
     // initialize
     xi->resize(size);
@@ -123,7 +123,6 @@ void hysteresisWidget::setModel(QVector<double> *data_x, QVector<double> *data_y
     for (int i=0; i<size; i++) {
         (*xi)[i] = (*data_x)[i];
         (*yi)[i] = (*data_y)[i];
-
     }
 
     // max -X
@@ -233,10 +232,10 @@ void hysteresisWidget::plotResponse(int t)
     text1.sprintf("Experiment: %+6.2f in %+8.2f kips",(*xi)[t],(*yi)[t]);
     QString text2;
     text2.sprintf("Simulation: %+6.2f in %+8.2f kips",(*xj)[t],(*yj)[t]);
-   // text1,sprintf("Experiment %4.2f",(*xi)[t]);
+    // text1,sprintf("Experiment %4.2f",(*xi)[t]);
     label1->setText(text1);
     label2->setText(text2);
-    //label1->setText(QString("Experiment: (" + QString::number((*xi)[t], 'f', 2)));
-   // label1->setText(QString("Experiment: (%1 in., %2 kips)").arg((*xi)[t],0,'f',1).arg((*yi)[t],0,'f',0));
-  //  label2->setText(QString("Simulation: (%1 in., %2 kips)").arg((*xj)[t],0,'f',1).arg((*yj)[t],0,'f',0));
+    // label1->setText(QString("Experiment: (" + QString::number((*xi)[t], 'f', 2)));
+    // label1->setText(QString("Experiment: (%1 in., %2 kips)").arg((*xi)[t],0,'f',1).arg((*yi)[t],0,'f',0));
+    // label2->setText(QString("Simulation: (%1 in., %2 kips)").arg((*xj)[t],0,'f',1).arg((*yj)[t],0,'f',0));
 }

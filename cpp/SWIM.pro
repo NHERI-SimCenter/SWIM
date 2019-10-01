@@ -32,7 +32,7 @@ include(OPS_includes.pro)
 
 INCLUDEPATH += $$PWD/libtorch/include
 INCLUDEPATH += /usr/local/include
-LIBS += -L/Users/simcenter/Codes/SimCenter/SWIM/cpp/libtorch/lib
+LIBS += -L$$PWD/libtorch/lib
 LIBS += -ltorch -lc10
 LIBS += -L/usr/local/lib
 LIBS += -ljansson
@@ -62,7 +62,9 @@ SOURCES += \
     qcustomplot/qcustomplot.cpp \
     ai.cpp \
     ConcreteShearWall.cpp \
-    OpenSeesTclBuilder.cpp
+    OpenSeesTclBuilder.cpp \
+    experimentWall.cpp \
+    PostProcessor.cpp
 
 HEADERS += \
     mainwindow.h \
@@ -75,14 +77,15 @@ HEADERS += \
     qcustomplot/qcustomplot.h \
     ai.h \
     ConcreteShearWall.h \
-    OpenSeesTclBuilder.h
+    OpenSeesTclBuilder.h \
+    experimentWall.h \
+    PostProcessor.h
 
 #FORMS += \
 #        mainwindow.ui
 
 RESOURCES += \
     aiscshapedatabase.qrc \
-    tests.qrc \
     braceImages.qrc \
     ai.qrc
 

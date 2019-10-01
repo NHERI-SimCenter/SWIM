@@ -1,3 +1,6 @@
+#ifndef EXPERIMENTWALL_H
+#define EXPERIMENTWALL_H
+
 /* *****************************************************************************
 Copyright (c) 2018-2019, The Regents of the University of California (Regents).
 All rights reserved.
@@ -34,23 +37,43 @@ UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 *************************************************************************** */
 
-#include "mainwindow.h"
-#include <QApplication>
 
-int main(int argc, char *argv[])
+#include <QString>
+class QJsonValue;
+
+class ExperimentWall
 {
-    QApplication a(argc, argv);
-    MainWindow w;
-    w.show();
+private:
+    int numSteps;
+    double dt;
+    QString testType; /*!< String description of test type */
+    QVector<double> *time;
+    QVector<double> *dataP;
+    QVector<double> *dataD;
 
 
-    QFile file(":/styleCommon/style.qss");
-    if(file.open(QFile::ReadOnly)) {
-        QString styleSheet = QLatin1String(file.readAll());
-        a.setStyleSheet(styleSheet);
-    }
 
-    w.setStyleSheet("QGroupBox {font: bold;}");
 
-    return a.exec();
-}
+public:
+    ExperimentWall();
+    ~ExperimentWall();
+
+    void setTime();
+    void setD(std::vector<double> *data);
+    void setP(std::vector<double> *data);
+
+    /*!
+     * Get the type of test
+     * @return A QString describing the test type
+     */
+    QString getTestType() const;
+    
+    int getNumSteps(void);
+    QVector<double>* getDataP(void);
+    QVector<double>* getDataD(void);
+    QVector<double>* getTime(void);
+    double getdt(void);
+    //void setDataD(QVector<double>* inU);
+};
+
+#endif // ExperimentWall_H

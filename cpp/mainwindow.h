@@ -59,6 +59,8 @@ UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 #include "ai.h"
 #include "ConcreteShearWall.h"
 #include "OpenSeesTclBuilder.h"
+#include "experimentWall.h"
+#include "PostProcessor.h"
 
 
 class Experiment;
@@ -258,6 +260,15 @@ private slots:
     void beRCselector_valueChanged_SAM(QString);
     void assemble_valueChanged_SAM();
     std::vector<float> getAIinputs();
+    void ESize_valueChanged_SAM(double);
+    void updateSAMFile();
+    void doWallAnalysisOpenSees();
+    void onOpenSeesFinished();
+    void loadNew();
+    void loadNewBtn_clicked();
+    void deletePanels();
+    void openseespathEdt_textChanged(QString);
+    bool copyDir(const QDir& from, const QDir& to, bool cover);
 
 
     // Combo Box
@@ -356,6 +367,7 @@ private:
 
     // load information
     void loadAISC();
+    void setExp(ExperimentWall *exp);
     void setExp(Experiment *exp);
     void initialize();
     void zeroResponse();
@@ -614,7 +626,8 @@ private:
     QMap<int, QGroupBox*> concreteBoxSAMs;
     QMap<int, QGroupBox*> rcBoxSAMs;
     QVector<QVector<QGroupBox*>> matBIMs;
-    QString expDirName = "/Users/simcenter/Codes/SimCenter/SWIM/data/wallDemo";
+    QString expDirName = "";
+    QString openseespath = "";
 
     QDir expDir = QDir(expDirName);
     QVector<QComboBox*> matSelectorBIM;
@@ -694,6 +707,34 @@ private:
 
     QDoubleSpinBox *eleSizeWebEdt;
     QDoubleSpinBox *eleSizeBEEdt;
+
+    QProgressBar * progressbar;
+
+    QProcess* openseesProcess;
+
+    int openseesErrCount = 0;
+
+    ExperimentWall *expWall = new ExperimentWall();
+
+    std::vector<std::vector<double>> dispx ;
+    std::vector<std::vector<double>> dispy ;
+
+    QGroupBox *inBox;
+
+    QLineEdit *openseespathEdt;
+
+    bool hasResult = false;
+
+    QStringList expNamesList={"wallDemo1", "wallDemo2"};
+    QStringList expDirList={QDir(rootDir).filePath("wallDemo1"),QDir(rootDir).filePath("wallDemo2")};
+    int currentExpInd = 0;
+
+    int wwidth, wheight;
+
+
+
+signals:
+    void signalProgress(int);
 
 };
 

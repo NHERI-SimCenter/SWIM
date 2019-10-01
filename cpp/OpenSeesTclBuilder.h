@@ -169,6 +169,9 @@ class OpenSeesTclBuilder {
 
   }
 
+  std::vector<double> dispVec;
+  std::vector<double> forceVec;
+
  private:
   char *filenameBIM;
   char *filenameSAM;

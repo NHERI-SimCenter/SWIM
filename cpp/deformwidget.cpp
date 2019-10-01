@@ -65,40 +65,44 @@ void deformWidget::setModel(QVector<double> *data_x, QVector<double> *data_y)
 {
     size = data_x->size();
 
-    // initialize
-    xi->resize(size);
-    yi->resize(size);
-    xj->reSize(size,steps);
-    yj->reSize(size,steps);
+    if(size>0)
+    {
+        // initialize
+        xi->resize(size);
+        yi->resize(size);
+        xj->reSize(size,steps);
+        yj->reSize(size,steps);
 
-    // set
-    for (int i=0; i < size; i++) {
-        (*xi)[i] = (*data_x)[i];
-        (*yi)[i] = (*data_y)[i];
-    }
-    //xi = data_x; seg fault on destructor as just setting pointer to point to something else
-    //yi = data_y;
 
-    // max -X
-    maxX = 0.;
-    minX = 0.;
-    for (int j=0; j < size; j++) {
-        double val = (*xi)[j];
-        if (val > maxX)
-            maxX = val;
-        if (val < minX)
-            minX = val;
-    }
+        // set
+        for (int i=0; i < size; i++) {
+            (*xi)[i] = (*data_x)[i];
+            (*yi)[i] = (*data_y)[i];
+        }
+        //xi = data_x; seg fault on destructor as just setting pointer to point to something else
+        //yi = data_y;
 
-    // max -Y
-    maxY = 0.;
-    minY = 0.;
-    for (int j=0; j < size; j++) {
-        double val = (*yi)[j];
-        if (val > maxY)
-            maxY = val;
-        if (val < minY)
-            minY = val;
+        // max -X
+        maxX = 0.;
+        minX = 0.;
+        for (int j=0; j < size; j++) {
+            double val = (*xi)[j];
+            if (val > maxX)
+                maxX = val;
+            if (val < minX)
+                minX = val;
+        }
+
+        // max -Y
+        maxY = 0.;
+        minY = 0.;
+        for (int j=0; j < size; j++) {
+            double val = (*yi)[j];
+            if (val > maxY)
+                maxY = val;
+            if (val < minY)
+                minY = val;
+        }
     }
 }
 
@@ -110,7 +114,7 @@ void deformWidget::setResp(Resp *data_x, Resp *data_y)
     // add to coordinates
     xj->reSize(size,steps);
     yj->reSize(size,steps);
-
+/*
     for (int t=0; t<steps; t++)
         for (int j=0; j<size; j++)
         {
@@ -141,9 +145,16 @@ void deformWidget::setResp(Resp *data_x, Resp *data_y)
                 minY = val;
         }
     }
-
+*/
     //minX = 0; maxX = 20;
     //minY = 0; maxY = 20;
+}
+
+void deformWidget::setResp(std::vector<std::vector<double>> *dispxtmp, std::vector<std::vector<double>> *dispytmp)
+{
+    //dispx->clear(); dispy->clear();
+    dispx = dispxtmp;
+    dispy = dispytmp;
 }
 
 void deformWidget::plotModel()
@@ -169,27 +180,105 @@ void deformWidget::plotModel()
     */
 
 
+    QString samFileName = expDirName + "/SAM.json";
+    QString in;
+    QFile inputFile(samFileName);
+    if(inputFile.open(QFile::ReadOnly)) {
+    //inputFile.open(QIODevice::ReadOnly | QIODevice::Text);
+    in = inputFile.readAll();
+    inputFile.close();
+    }else{
+        // do nothing.
+    }
+
+    loc.clear();
+    std::vector<double> xs;
+    std::vector<double> ys;
+    QJsonObject samRoot, SAM, geometry;
+    QJsonArray nodesJ;
+    QJsonDocument indoc = QJsonDocument::fromJson(in.toUtf8());
+    wallw = 0.0;
+    wallh = 0.0;
+    //qWarning() << indoc.isNull();
+    if (indoc.isNull())
+    {
+        qWarning() << "SAM.json is missing.";
+    }
+    else{
+        samRoot = indoc.object();
+
+        SAM = samRoot["Structural Analysis Model"].toObject();
+        geometry = SAM["geometry"].toObject();
+        nodesJ = geometry["nodes"].toArray();
+
+        for (auto nodej : nodesJ) {
+            int thisNodeName = nodej.toObject()["name"].toInt();
+            QJsonArray thisNodeCoorJ = nodej.toObject()["crd"].toArray();
+            double thisNodex = thisNodeCoorJ[0].toDouble();
+            double thisNodey = thisNodeCoorJ[1].toDouble();
+            loc.push_back({thisNodex,thisNodey});
+            xs.push_back(thisNodex);
+            ys.push_back(thisNodey);
+            if(thisNodex>wallw) wallw = thisNodex;
+            if(thisNodey>wallh) wallh = thisNodey;
+        }
+    }
+
+    size = int(loc.size());
 
 
 
+    std::sort(xs.begin(), xs.end());
+    xs.erase(std::unique(xs.begin(), xs.end()), xs.end());
+    for (auto it = xs.cbegin(); it != xs.cend(); ++it)
+        qDebug() << it[0] << " ";
+    std::sort(ys.begin(), ys.end());
+    ys.erase(std::unique(ys.begin(), ys.end()), ys.end());
+    for (auto it = ys.cbegin(); it != ys.cend(); ++it)
+        qDebug() << it[0] << " ";
 
+    double x,y;
+    horizontalIndex.clear();
+    for (auto ity = ys.cbegin(); ity != ys.cend(); ++ity)
+    {
+        y = ity[0];
+        std::vector<int> hindInner;
+        for (auto itx = xs.cbegin(); itx != xs.cend(); ++itx)
+        {
+            x = itx[0];
+            auto itr = std::find_if(loc.cbegin(), loc.cend(), compare({x,y}));
 
-    // test
+            if (itr != loc.cend()) {
+                hindInner.push_back(int(std::distance(loc.cbegin(), itr)));
+                //qDebug() << "Element present at index " << std::distance(loc.cbegin(), itr);
+            }
+            else {
+                qDebug() << "Element not found";
+            }
+        }
+        horizontalIndex.push_back(hindInner);
+    }
+    verticalIndex.clear();
+    for (auto itx = xs.cbegin(); itx != xs.cend(); ++itx)
+    {
+        x = itx[0];
+        std::vector<int> vindInner;
+        for (auto ity = ys.cbegin(); ity != ys.cend(); ++ity)
+        {
+            y= ity[0];
+            auto itr = std::find_if(loc.cbegin(), loc.cend(), compare({x,y}));
 
-    QVector<double> x0, y0, x1, y1,x2,y2,x3,y3,x4,y4;
-    x0 << 0. << 1. << 2. << 3.;
-    y0 << 0. << 0. << 0. << 0.;
-    x1 << 0. << 1. << 2. << 3.;
-    y1 << 5. << 5. << 5. << 5.;
+            if (itr != loc.cend()) {
+                vindInner.push_back(int(std::distance(loc.cbegin(), itr)));
+                //qDebug() << "Element present at index " << std::distance(loc.cbegin(), itr);
+            }
+            else {
+                qDebug() << "Element not found";
+            }
+        }
+        verticalIndex.push_back(vindInner);
+    }
 
-    x2 << 0. << 1. << 2. << 3;
-    y2 << 10. << 10. << 10. << 10.;
-
-    x3 << 0<< 0. << 0. << 0. << 0.5   << 1.5 << 2.5 << 3.5<<3<<3<<3<<3;
-    y3 << 0 <<3. << 5. << 10. << 15.<< 15<<15<<15   <<10<<5<<3<<0;
-
-    x4<<1.5<<1.5<<1.5<<1.75;
-    y4<<0<<5<<10<<15;
 
 
     // create pen
@@ -198,34 +287,34 @@ void deformWidget::plotModel()
     pen.setColor(QColor(Qt::black));
 
 
-    // line color
-    graph = thePlot->addGraph();
-    thePlot->graph()->setPen(pen);
-    thePlot->graph()->setData(x0,y0,true);
 
-    //
-    graph = thePlot->addGraph();
-    thePlot->graph()->setPen(pen);
-    thePlot->graph()->setData(x1,y1,true);
+    for(int i=0; i<int(verticalIndex.size());i++)
+    {
+        QVector<double> xh,yh;
+        for (int j=0;j< verticalIndex[i].size(); j++)
+        {
+            xh.append(loc[verticalIndex[i][j]][0]);
+            yh.append(loc[verticalIndex[i][j]][1]);
+        }
+        graph = thePlot->addGraph();
+        thePlot->graph()->setPen(pen);
+        thePlot->graph()->setData(xh,yh,true);
+    }
+    for(int i=0; i<int(horizontalIndex.size());i++)
+    {
+        QVector<double> xh,yh;
+        for (int j=0;j< horizontalIndex[i].size(); j++)
+        {
+            xh.append(loc[horizontalIndex[i][j]][0]);
+            yh.append(loc[horizontalIndex[i][j]][1]);
+        }
+        graph = thePlot->addGraph();
+        thePlot->graph()->setPen(pen);
+        //thePlot->graph()->setBrush(QBrush(QColor(0,0,255,100)));
+        thePlot->graph()->setData(xh,yh,true);
+    }
 
-
-    graph = thePlot->addGraph();
-    thePlot->graph()->setPen(pen);
-    thePlot->graph()->setData(x2,y2,true);
-
-    graph = thePlot->addGraph();
-    thePlot->graph()->setPen(pen);
-    thePlot->graph()->setData(x4,y4,true);
-
-    //
-    graph = thePlot->addGraph();
-    thePlot->graph()->setBrush(QBrush(QColor(0,0,255,100)));
-    thePlot->graph()->setData(x3,y3,true);
-
-
-
-
-
+    //putSomeColorInMesh();
 
 
 
@@ -235,8 +324,8 @@ void deformWidget::plotModel()
     thePlot->yAxis->setRange(minY-1,maxY+1);
     */
     // axes
-    thePlot->xAxis->setRange(0-10,0+20);
-    thePlot->yAxis->setRange(0-10,0+20);
+    thePlot->xAxis->setRange(0-10,0+wallw+10);
+    thePlot->yAxis->setRange(0-10,0+wallh+10);
 
     // update plot
     thePlot->replot(QCustomPlot::rpQueuedReplot);
@@ -246,7 +335,39 @@ void deformWidget::plotModel()
     label->setText(QString("current = %1 in.").arg(maxY,0,'f',2));
 }
 
-void deformWidget::plotResponse(int t)
+void deformWidget::putSomeColorInMesh()
+{
+
+    // put some color
+    QVector<double> xh,yh;
+
+    int i = 0;
+    for (int j=0;j< verticalIndex[i].size(); j++)
+    {
+        xh.append(loc[verticalIndex[i][j]][0]);
+        yh.append(loc[verticalIndex[i][j]][1]);
+    }
+
+    i = horizontalIndex.size()-1;
+    for (int j=0;j< horizontalIndex[i].size(); j++)
+    {
+        xh.append(loc[horizontalIndex[i][j]][0]);
+        yh.append(loc[horizontalIndex[i][j]][1]);
+    }
+    i = verticalIndex.size()-1;
+    for (int j=verticalIndex[i].size()-1;j>=0 ; j--)
+    {
+        xh.append(loc[verticalIndex[i][j]][0]);
+        yh.append(loc[verticalIndex[i][j]][1]);
+    }
+
+    graph = thePlot->addGraph();
+    //thePlot->graph()->setPen(pen);
+    thePlot->graph()->setBrush(QBrush(QColor(0,0,255,100)));
+    thePlot->graph()->setData(xh,yh,true);
+}
+
+void deformWidget::plotResponse_old(int t)
 {
     // setup system plot
     thePlot->clearPlottables();
@@ -275,8 +396,8 @@ void deformWidget::plotResponse(int t)
     thePlot->graph(0)->setData(*xt,*yt,true);
 
     // axes
-    thePlot->xAxis->setRange(minX-10,maxX+10);
-    thePlot->yAxis->setRange(minY-1,maxY+1);
+    thePlot->xAxis->setRange(0-10,0+wallw+10);
+    thePlot->yAxis->setRange(0-10,0+wallh+10);
 
     // update plot
     thePlot->replot(QCustomPlot::rpQueuedReplot);
@@ -287,4 +408,83 @@ void deformWidget::plotResponse(int t)
 
     delete xt;
     delete yt;
+}
+
+
+void deformWidget::plotResponse(int t)
+{
+    // setup system plot
+    thePlot->clearPlottables();
+    thePlot->clearGraphs();
+
+    // add graph
+    graph = thePlot->addGraph();
+
+    // create pen
+    QPen pen;
+    pen.setWidthF(1);
+    pen.setColor(QColor(Qt::black));
+
+
+    double x0,y0;
+    double maxXt=0.;
+    if(verticalIndex.size()>0 && dispx->size()>0)
+    {
+        for(int i=0; i<int(verticalIndex.size());i++)
+        {
+            QVector<double> xh,yh;
+            for (int j=0;j< verticalIndex[i].size(); j++)
+            {
+                x0 = loc[verticalIndex[i][j]][0];
+                y0 = loc[verticalIndex[i][j]][1];
+                if(fabs(x0)>fabs(maxXt))
+                    maxXt = x0;
+                xh.append(x0+(*dispx)[t][verticalIndex[i][j]]);
+                yh.append(y0+(*dispy)[t][verticalIndex[i][j]]);
+            }
+            graph = thePlot->addGraph();
+            thePlot->graph()->setPen(pen);
+            thePlot->graph()->setData(xh,yh,true);
+        }
+        for(int i=0; i<int(horizontalIndex.size());i++)
+        {
+            QVector<double> xh,yh;
+            for (int j=0;j< horizontalIndex[i].size(); j++)
+            {
+                x0 = loc[horizontalIndex[i][j]][0];
+                y0 = loc[horizontalIndex[i][j]][1];
+                if(fabs(x0)>fabs(maxXt))
+                    maxXt = x0;
+                xh.append(x0+(*dispx)[t][horizontalIndex[i][j]]);
+                yh.append(y0+(*dispy)[t][horizontalIndex[i][j]]);
+            }
+            graph = thePlot->addGraph();
+            thePlot->graph()->setPen(pen);
+            //thePlot->graph()->setBrush(QBrush(QColor(0,0,255,100)));
+            thePlot->graph()->setData(xh,yh,true);
+        }
+    }
+
+    //putSomeColorInMesh();
+
+
+
+    /*
+    // axes
+    thePlot->xAxis->setRange(minX-10,maxX+10);
+    thePlot->yAxis->setRange(minY-1,maxY+1);
+    */
+    // axes
+    thePlot->xAxis->setRange(0-10,0+wallw+10);
+    thePlot->yAxis->setRange(0-10,0+wallh+10);
+
+    // update plot
+    thePlot->replot(QCustomPlot::rpQueuedReplot);
+    thePlot->update();
+
+    // update label
+    label->setText(QString("current = %1 in.").arg(maxXt,0,'f',2));
+
+    //delete xt;
+    //delete yt;
 }
