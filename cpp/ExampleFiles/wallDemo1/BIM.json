@@ -1,0 +1,209 @@
+{
+	"GeneralInformation": {
+		"name": "RCWall_DazioWSH6",
+		"revision": 1,
+		"type": "ExperimentalTest",
+		"year": null,
+		"stories": 2,
+		"height": 158.66,
+		"volume": 73770.506,
+		"area": null,
+		"location": {
+			"name": "unknown",
+			"latitude": null,
+			"longitude": null
+		},
+		"units": {
+			"force": "kip",
+			"length": "in",
+			"time": "sec",
+			"temperature": "F"
+		},
+		"engineer": "Dazio",
+		"URL": null,
+		"DOI": null
+	},
+	"StructuralInformation": {
+		"type": "A1 - SpecialReinforcedConcreteShearWall",
+		"layout": {
+			"floors": [
+				{
+					"name": "0",
+					"elevation": 0
+				},
+				{
+					"name": "1",
+					"elevation": 79.33
+				},
+				{
+					"name": "2",
+					"elevation": 158.66
+				}
+			],
+			"clines": [
+				{
+					"name": "1",
+					"location": [0,0]
+				},
+				{
+					"name": "2",
+					"location": [78.74,0]
+				}
+			]
+		},
+		"properties": {
+			"materials": [
+				{
+					"name": "Concrete",
+					"type": "concrete",
+					"masspervolume": 8.60914e-05,
+					"fpc": 6.613488035,
+					"E": 4635.431223,
+					"nu": 0.2
+				},
+				{
+					"name": "Steel Web Vert",
+					"type": "steel rebar",
+					"masspervolume": 0.0002810502998,
+					"fy": 84.6555475,
+					"E": 29000,
+					"fu": 103.6113125,
+					"epsu": 0.0785
+				},
+				{
+					"name": "Steel Web Horz",
+					"type": "steel rebar",
+					"masspervolume": 0.0002810502998,
+					"fy": 75.25743292,
+					"E": 29000,
+					"fu": 81.02973169,
+					"epsu": 0.0545
+				},
+				{
+					"name": "Steel Web Shear",
+					"type": "steel rebar",
+					"masspervolume": 0.0002810502998,
+					"fy": 0,
+					"E": 29000,
+					"fu": 0
+				},
+				{
+					"name": "Steel BE Vert",
+					"type": "steel rebar",
+					"masspervolume": 0.0002810502998,
+					"fy": 83.53879623,
+					"E": 29000,
+					"fu": 97.88252357,
+					"epsu": 0.0729,
+					"epsr": 0.01840615426
+				},
+				{
+					"name": "Steel BE Conf",
+					"type": "steel rebar",
+					"masspervolume": 0.0002810502998,
+					"fy": 75.25743292,
+					"E": 29000,
+					"fu": 81.02973169
+				}
+			],
+			"framesections": [],
+			"slabsections": [],
+			"decksections": [],
+			"wallsections": [
+				{
+					"name": "Wall",
+					"material": "Concrete",
+					"type": "concrete rectangular wall",
+					"length": 78.74,
+					"thickness": 5.905,
+					"boundaryElementLength": 15.157,
+					"longitudinalRebar": {
+						"material": "Steel Web Vert",
+						"numBarsThickness": 2,
+						"barArea": 0.07793113276,
+						"spacing": 4.92,
+						"cover": 0.71
+					},
+					"transverseRebar": {
+						"material": "Steel Web Horz",
+						"numBarsThickness": 2,
+						"barArea": 0.04374353611,
+						"spacing": 5.91,
+						"cover": 0.71
+					},
+					"longitudinalBoundaryElementRebar": {
+						"material": "Steel BE Vert",
+						"numBarsLength": 3,
+						"numBarsThickness": 2,
+						"barArea": 0.1752708364,
+						"cover": 0.63
+					},
+					"transverseBoundaryElementRebar": {
+						"material": "Steel BE Conf",
+						"numBarsLength": 4,
+						"numBarsThickness": 2,
+						"barArea": 0.04374353611,
+						"spacing": 1.97
+					}
+				}
+			],
+			"connections": [],
+			"panelzones": [],
+			"links": [],
+			"points": []
+		},
+		"geometry": {
+			"columns": [],
+			"beams": [],
+			"braces": [],
+			"floors": [],
+			"walls": [
+				{
+					"name": "W1S1",
+					"cline": [
+						"1",
+						"2"
+					],
+					"floor": [
+						"0",
+						"1"
+					],
+					"segment": [
+						{
+							"section": "Wall",
+							"ratio": [0,1],
+							"angle": 0
+						}
+					]
+				},
+				{
+					"name": "W1S2",
+					"cline": [
+						"1",
+						"2"
+					],
+					"floor": [
+						"1",
+						"2"
+					],
+					"segment": [
+						{
+							"section": "Wall",
+							"ratio": [0,1],
+							"angle": 0
+						}
+					]
+				}
+			],
+			"panelzones": [],
+			"links": [],
+			"points": []
+		}
+	},
+	"ExteriorInformation": {
+		"type": null
+	},
+	"ContentInformation": {
+		"type": null
+	}
+}
