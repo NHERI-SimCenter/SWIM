@@ -249,6 +249,10 @@ private slots:
     void rc_valueChanged_SAM(QString);
     void rc_valueChanged_SAM();
     void concrete_valueChanged_SAM(double);
+    void beta_valueChanged_SAM(double);
+    void Bn_valueChanged_SAM(double);
+    void Ap_valueChanged_SAM(double);
+    void An_valueChanged_SAM(double);
     void rebar_valueChanged_SAM(double);
     void rebar_valueChanged_SAM(QString);
     void rebar_valueChanged_SAM();
@@ -261,6 +265,8 @@ private slots:
     void assemble_valueChanged_SAM();
     std::vector<float> getAIinputs();
     void ESize_valueChanged_SAM(double);
+    void webESize_valueChanged_SAM(double);
+    void beESize_valueChanged_SAM(double);
     void updateSAMFile();
     void doWallAnalysisOpenSees();
     void onOpenSeesFinished();
@@ -269,6 +275,7 @@ private slots:
     void deletePanels();
     void openseespathEdt_textChanged(QString);
     bool copyDir(const QDir& from, const QDir& to, bool cover);
+    void AIbtn_clicked();
 
 
     // Combo Box
@@ -730,6 +737,22 @@ private:
     int currentExpInd = 0;
 
     int wwidth, wheight;
+
+
+    double beta = 0.5;
+    double An = 0.5;
+    double Ap = 0.5;
+    double Bn = 0.5;
+
+    QPushButton *AIbtn;
+
+    double betaAI = 0.5;
+    double AnAI = 0.5;
+    double ApAI = 0.5;
+    double BnAI = 0.5;
+    double nLAI = 2;
+
+    int stepOpenSees = 0;
 
 
 

@@ -1255,6 +1255,19 @@ void MainWindow::deletePanels()
     addExp = nullptr;
     playButton = nullptr;
 
+    beta = 0.5;
+    An = 0.5;
+    Ap = 0.5;
+    Bn = 0.5;
+
+    betaAI = 0.5;
+    AnAI = 0.5;
+    ApAI = 0.5;
+    BnAI = 0.5;
+    nLAI = 2;
+
+    stepOpenSees = 0;
+
 
 
 
@@ -2800,19 +2813,16 @@ bool MainWindow::saveAs()
 void MainWindow::about()
 {
     QString textAbout = "\
-            <p> This NHERI SimCenter educational application will allow the user to explore how modeling assumptions effect the response of a braced frame element. \
+            <p> This NHERI SimCenter educational application will allow the user to explore how modeling assumptions effect the response of a concrete shear wall element. \
              The application will allow the user to explore effects such as: <ul>\
-            <li>number and type of elements, </li> \
-            <li>camber and shape of initial imperfection in brace,</li> \
-            <li>section discretization,</li> \
+            <li>number of elements, </li> \
             <li> material type and properties,</li> \
-            <li>connection details</li></ul> \
             on the response.\
             <p>\
             To allow the user to test validity of their modelling assumptions, the results are compared to data obtained from a number of experimental tests.\
             <p>\
-            Developers <ul><li> Main Developer: Professor Barbara Simpson of Oregon State University.</li>\
-            <li> Others who have contributed to Coding, Debugging, Testing and Documentation: Frank McKenna, Michael Gardner, and Peter Mackenzie-Helnwein.</li>\
+            Developers <ul><li> Main Developer: Charles Wang, c_w@berkeley.edu.</li>\
+            <li> Others who have contributed to Coding, Debugging, Testing and Documentation: Frank McKenna.</li>\
             </ul><p>\
            \
             \
@@ -2844,7 +2854,7 @@ void MainWindow::cite()
 {
     QString textCite = "\
         <p>\
-Charles Wang & Frank McKenna. (2019, October 1). \
+Charles Wang. (2019, October 1). \
 SimCenter/SWIM: v1.0.0 (Version v1.0.0). Zenodo. http://doi.org/10.5281/zenodo.3466376 \
       <p>\
       ";
@@ -2866,7 +2876,7 @@ void MainWindow::copyright()
     QString textCopyright = "\
         <p>\
         The source code is licensed under a BSD 2-Clause License:<p>\
-        \"Copyright (c) 2017-2018, The Regents of the University of California (Regents).\"\
+        \"Copyright (c) 2017-2019, The Regents of the University of California (Regents).\"\
         All rights reserved.<p>\
         <p>\
         Redistribution and use in source and binary forms, with or without \
@@ -3743,6 +3753,7 @@ void MainWindow::doWallAnalysis()
 void MainWindow::doWallAnalysisOpenSees()
 {
     QString tclFileName = expDirName + "/wall.tcl";
+    stepOpenSees = 0;
 
 
 
@@ -3770,7 +3781,7 @@ void MainWindow::doWallAnalysisOpenSees()
         }
 
     } else {
-        QMessageBox::information(this,tr("SWIM Information"), "Please specify FEM engine with OpenSees path.", tr("I know."));
+        QMessageBox::information(this,tr("SWIM Information"), "Please specify FEM engine (in SAM tab) with OpenSees path.", tr("I know."));
     }
 
 }
@@ -3782,65 +3793,80 @@ void MainWindow::onOpenSeesFinished()
     //writeSurfaceMotion();
     QString str_err = openseesProcess->readAllStandardError();
 
+
+
     if(openseesErrCount==1)
     {
         if(str_err.contains("cyclic is done."))
         {
-
-            //qDebug() << "opensees says:" << str_err;
-            openseesErrCount = 2;
-
-            // do some postprocessing here
-
-            QMessageBox::information(this,tr("OpenSees Information"), "Analysis is done.", tr("I know."));
-
-
-            emit signalProgress(100);
-            progressbar->hide();
-
-            PostProcessor *postprocessor = new PostProcessor(expDirName);
-
-            //std::vector<double> *a = &thePreprocessor->dispVec;
-            //std::vector<double> b = postprocessor->force[0];
             expWall->setD(&thePreprocessor->dispVec);
             expWall->setP(&thePreprocessor->forceVec);
             expWall->setTime();
             setExp(expWall);
 
-            hPlot->setModel(expD,expP);
-            hPlot->plotModel();
+            if(stepOpenSees<(numSteps-2.0)/numSteps*100.){//
+                openseesErrCount = 2;
+                QMessageBox::information(this,tr("OpenSees Information"), "OpenSees failed to complete. Try using lesser elements. ", tr("I know."));
+                hasResult = false;
+                stepOpenSees = 0;
+                emit signalProgress(1);
+                progressbar->hide();
 
-
-            //hPlot->setResp(&(*Ux->data[nn-1]),&(*q1->data[0]));
-            QVector<double> responseForceWall;
-            std::vector<double> responseForceWall_std = postprocessor->getForce();
-            dispx = postprocessor->getDispx();
-            dispy = postprocessor->getDispy();
-
-            for(auto f : responseForceWall_std)
-            {
-                responseForceWall.append(f);
             }
+            else
+            {
+                //qDebug() << "opensees says:" << str_err;
+                openseesErrCount = 2;
 
-            hPlot->setResp(expD,&responseForceWall);
-            hPlot->plotResponse(0);
+                // do some postprocessing here
 
-            dPlot->setResp(&dispx, &dispy);
-            dPlot->plotResponse(0);
+                QMessageBox::information(this,tr("OpenSees Information"), "Analysis is done.", tr("I know."));
 
-            hasResult = true;
+
+                emit signalProgress(100);
+                progressbar->hide();
+
+                PostProcessor *postprocessor = new PostProcessor(expDirName);
+
+                //std::vector<double> *a = &thePreprocessor->dispVec;
+                //std::vector<double> b = postprocessor->force[0];
+
+
+                hPlot->setModel(expD,expP);
+                hPlot->plotModel();
+
+
+                //hPlot->setResp(&(*Ux->data[nn-1]),&(*q1->data[0]));
+                QVector<double> responseForceWall;
+                std::vector<double> responseForceWall_std = postprocessor->getForce();
+                dispx = postprocessor->getDispx();
+                dispy = postprocessor->getDispy();
+
+                for(auto f : responseForceWall_std)
+                {
+                    responseForceWall.append(f);
+                }
+
+                hPlot->setResp(expD,&responseForceWall);
+                hPlot->plotResponse(0);
+
+                dPlot->setResp(&dispx, &dispy);
+                dPlot->plotResponse(0);
+
+                hasResult = true;
+            }
 
 
 
         }else{
-            qDebug() << str_err;
+            //qDebug() << str_err;
             QRegExp rxlen("(.+)(%)");
             int pos = rxlen.indexIn(str_err);
             if (pos > -1) {
                 QString value = rxlen.cap(1);
-                int step = int(ceil(value.toDouble()));
-                if(step>0)
-                    emit signalProgress(step);
+                stepOpenSees = int(ceil(value.toDouble()));
+                if(stepOpenSees>0)
+                    emit signalProgress(stepOpenSees);
             }
 
 
@@ -4027,6 +4053,9 @@ void MainWindow::createInputPanel()
     //QPushButton *stop = new QPushButton("stop");
     QPushButton *reset = new QPushButton("Reset");
     reset->setToolTip(tr("Clear simulation results and reload default experiment"));
+    AIbtn = new QPushButton("AI");
+    AIbtn->setToolTip(tr("Set parameters predicted by AI"));
+    connect(AIbtn,SIGNAL(clicked()), this, SLOT(AIbtn_clicked()));
     playButton = new QPushButton("Play");
     playButton->setToolTip(tr("Play simulation and experimental results"));
    // QPushButton *pause = new QPushButton("Pause");
@@ -4037,9 +4066,11 @@ void MainWindow::createInputPanel()
     exitApp->setToolTip(tr("Exit Application"));
 
 
+    buttonLay->addWidget(AIbtn);
     buttonLay->addWidget(run);
     buttonLay->addWidget(playButton);
-    buttonLay->addWidget(reset);  
+    //buttonLay->addWidget(reset);
+
    // buttonLay->addWidget(pause);
    // buttonLay->addWidget(restart);
     buttonLay->addWidget(exitApp);
@@ -4099,6 +4130,8 @@ void MainWindow::createInputPanel()
 
     connect(eleSizeWebEdt, SIGNAL(valueChanged(double)), this, SLOT(ESize_valueChanged_SAM(double)));
     connect(eleSizeBEEdt, SIGNAL(valueChanged(double)), this, SLOT(ESize_valueChanged_SAM(double)));
+    connect(eleSizeWebEdt, SIGNAL(valueChanged(double)), this, SLOT(webESize_valueChanged_SAM(double)));
+    connect(eleSizeBEEdt, SIGNAL(valueChanged(double)), this, SLOT(beESize_valueChanged_SAM(double)));
 
     meshBoxLay->setColumnStretch(1,1);
     meshBoxLay->setRowStretch(1,1);
@@ -4126,7 +4159,7 @@ void MainWindow::createInputPanel()
 
     preprocess(); // SAM->tcl
 
-
+/*
     // AI predicts parameters and update the UI
     std::vector<float> AIinputsVec = getAIinputs();
     std::vector<float> predValues = ai.predict(AIinputsVec);// ['Ap','An', 'Bn', 'beta','N']
@@ -4134,14 +4167,19 @@ void MainWindow::createInputPanel()
     {
         matIDselector_concrete->setCurrentText(concreteIDtmp);
         int cIDtmp = concreteIDtmp.toInt();
-        concreteApEdt[cIDtmp]->setValue(std::max(predValues[0],float(0.)));
-        concreteAnEdt[cIDtmp]->setValue(std::max(predValues[1],float(0.)));
-        concreteBnEdt[cIDtmp]->setValue(std::max(predValues[2],float(0.)));
-        concretebetaEdt[cIDtmp]->setValue(std::max(predValues[3],float(0.)));
+        Ap = double(std::max(predValues[0],float(0.)));
+        An = double(std::max(predValues[1],float(0.)));
+        Bn = double(std::max(predValues[2],float(0.)));
+        beta = double(std::max(predValues[3],float(0.)));
+        concreteApEdt[cIDtmp]->setValue(Ap);
+        concreteAnEdt[cIDtmp]->setValue(An);
+        concreteBnEdt[cIDtmp]->setValue(Bn);
+        concretebetaEdt[cIDtmp]->setValue(beta);
     }
     int nL = std::max(int(predValues[4]),1);// number of elements along web length
     eleSizeWebEdt->setValue(webLength/double(nL));
     eleSizeBEEdt->setValue(beLength/2.0);// default mesh of boundary: 2 elements
+    */
     updateSAMFile();
 
 
@@ -4195,6 +4233,10 @@ void MainWindow::createInputPanel()
     //inscrollArea->setMaximumWidth(wwidth);
     mainLayout->addWidget(inscrollArea, 0);
 
+    this->setMaximumWidth(tabWidget->width()*1.7);
+    this->setMaximumHeight(tabWidget->height()*2);
+
+
 
     //mainLayout->addWidget(inBox, 0);
 
@@ -4219,6 +4261,45 @@ void MainWindow::createInputPanel()
 
 }
 
+void MainWindow::AIbtn_clicked()
+{
+    // AI predicts parameters and update the UI
+    std::vector<float> AIinputsVec = getAIinputs();
+    std::vector<float> predValues = ai.predict(AIinputsVec);// ['Ap','An', 'Bn', 'beta','N']
+    for(auto concreteIDtmp : matIDList_concrete)
+    {
+        matIDselector_concrete->setCurrentText(concreteIDtmp);
+        int cIDtmp = concreteIDtmp.toInt();
+        Ap = double(std::max(predValues[0],float(0.01)));
+        An = double(std::max(predValues[1],float(0.01)));
+        Bn = double(std::max(predValues[2],float(0.01)));
+        beta = double(std::max(predValues[3],float(0.01)));
+
+        ApAI = Ap;
+        AnAI = An;
+        BnAI = Bn;
+        betaAI = beta;
+
+        concreteApEdt[cIDtmp]->setValue(Ap);
+        concreteAnEdt[cIDtmp]->setValue(An);
+        concreteBnEdt[cIDtmp]->setValue(Bn);
+        concretebetaEdt[cIDtmp]->setValue(beta);
+
+        concreteApEdt[cIDtmp]->setStyleSheet("background-color: yellow");
+        concreteAnEdt[cIDtmp]->setStyleSheet("background-color: yellow");
+        concreteBnEdt[cIDtmp]->setStyleSheet("background-color: yellow");
+        concretebetaEdt[cIDtmp]->setStyleSheet("background-color: yellow");
+
+    }
+    nLAI = std::max(int(predValues[4]),1);// number of elements along web length
+    eleSizeWebEdt->setValue(webLength/double(nLAI));
+    eleSizeBEEdt->setValue(beLength/2.0);// default mesh of boundary: 2 elements
+    eleSizeWebEdt->setStyleSheet("background-color: yellow");
+    eleSizeBEEdt->setStyleSheet("background-color: yellow");
+    updateSAMFile();
+
+}
+
 void MainWindow::ESize_valueChanged_SAM(double esize)
 {
     hasResult = false;
@@ -4227,6 +4308,14 @@ void MainWindow::ESize_valueChanged_SAM(double esize)
          updateSAMFile();
          dPlot->plotModel();
      }
+}
+void MainWindow::webESize_valueChanged_SAM(double esize)
+{
+    eleSizeWebEdt->setStyleSheet("");
+}
+void MainWindow::beESize_valueChanged_SAM(double esize)
+{
+    eleSizeBEEdt->setStyleSheet("");
 }
 
 // handle when user change the number of floors // adding wall
@@ -4303,10 +4392,6 @@ void MainWindow::createSAM()
     int nH = nL;
     int nW = 5;
 
-    double beta = 0.5;
-    double An = 0.5;
-    double Ap = 0.5;
-    double Bn = 0.5;
 
     char *filenameEVENT = 0;
 
@@ -4332,10 +4417,30 @@ void MainWindow::updateSAMFile()
     int nH = nL; // this number doesn't matter
     int nW = int(round(beLength/esizeBE));
 
+    // update parameters
+    //QMap<int, QDoubleSpinBox*> concreteApEdt;
+    /*
+    QMapIterator<int, QDoubleSpinBox*> i(concreteApEdt);
+    while (i.hasNext()) {
+        i.next();
+        QDoubleSpinBox *spinObj = i.value();
+        spinObj->value()
+        rcMatStrList.append(QString::number(rebarObj["name"].toInt()));
+    }
+    */
+    /*
+    Ap = concreteApEdt.first()->value();
+    An = concreteAnEdt.first()->value();
+    Bn = concreteBnEdt.first()->value();
+    beta = concretebetaEdt.first()->value();
+    */
+
+    /*
     double beta = 0.5;
     double An = 0.5;
     double Ap = 0.5;
     double Bn = 0.5;
+    */
 
     char *filenameEVENT = 0;
 
@@ -4591,10 +4696,16 @@ void MainWindow::createSAMui()
         connect(concreteEEdt[concreteID], SIGNAL(valueChanged(double)), this, SLOT(concrete_valueChanged_SAM(double)));
         connect(concretefpcEdt[concreteID], SIGNAL(valueChanged(double)), this, SLOT(concrete_valueChanged_SAM(double)));
         connect(concretenuEdt[concreteID], SIGNAL(valueChanged(double)), this, SLOT(concrete_valueChanged_SAM(double)));
+
         connect(concretebetaEdt[concreteID], SIGNAL(valueChanged(double)), this, SLOT(concrete_valueChanged_SAM(double)));
         connect(concreteApEdt[concreteID], SIGNAL(valueChanged(double)), this, SLOT(concrete_valueChanged_SAM(double)));
         connect(concreteAnEdt[concreteID], SIGNAL(valueChanged(double)), this, SLOT(concrete_valueChanged_SAM(double)));
         connect(concreteBnEdt[concreteID], SIGNAL(valueChanged(double)), this, SLOT(concrete_valueChanged_SAM(double)));
+
+        connect(concretebetaEdt[concreteID], SIGNAL(valueChanged(double)), this, SLOT(beta_valueChanged_SAM(double)));
+        connect(concreteApEdt[concreteID], SIGNAL(valueChanged(double)), this, SLOT(Ap_valueChanged_SAM(double)));
+        connect(concreteAnEdt[concreteID], SIGNAL(valueChanged(double)), this, SLOT(An_valueChanged_SAM(double)));
+        connect(concreteBnEdt[concreteID], SIGNAL(valueChanged(double)), this, SLOT(Bn_valueChanged_SAM(double)));
 
         concreteBoxSAMs.insert(concreteID, concreteWebBox);
 
@@ -4908,6 +5019,17 @@ void MainWindow::rc_valueChanged_SAM()
 
 }
 
+void MainWindow::beta_valueChanged_SAM(double){
+    beta = concretebetaEdt.first()->value();
+    concretebetaEdt.first()->setStyleSheet("");
+}
+
+void MainWindow::Ap_valueChanged_SAM(double){Ap = concreteApEdt.first()->value();
+                                            concreteApEdt.first()->setStyleSheet("");}
+void MainWindow::An_valueChanged_SAM(double){An = concreteAnEdt.first()->value();
+                                            concreteAnEdt.first()->setStyleSheet("");}
+void MainWindow::Bn_valueChanged_SAM(double){Bn = concreteBnEdt.first()->value();
+                                            concreteBnEdt.first()->setStyleSheet("");}
 
 void MainWindow::concrete_valueChanged_SAM(double){
     int currentConcreteID =  matIDselector_concrete->currentText().toInt();
@@ -5431,7 +5553,7 @@ void MainWindow::createOutputPanel()
 
     progressbar = new QProgressBar(this);
     progressbar->setOrientation(Qt::Vertical);
-    progressbar->setValue(50);
+    progressbar->setValue(1);
     progressbar->hide();
     mainLayout->addWidget(progressbar,1);
     connect( this, SIGNAL( signalProgress(int) ), progressbar, SLOT( setValue(int) ) );
@@ -5532,7 +5654,7 @@ QComboBox *addCombo(QString text, QStringList items, QString *unitText,
     // width
     QRect rec = QApplication::desktop()->screenGeometry();
     //int height = 0.7*rec.height();
-    int width = 0.55*rec.width();
+    int width = 0.75*rec.width();
     res->setMaximumWidth(0.25*width/2);
     res->setMinimumWidth(0.2*width/2);
 
