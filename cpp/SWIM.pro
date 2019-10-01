@@ -32,7 +32,7 @@ include(OPS_includes.pro)
 
 INCLUDEPATH += $$PWD/libtorch/include
 INCLUDEPATH += /usr/local/include
-LIBS += -L/Users/simcenter/Codes/SimCenter/SWIM/cpp/libtorch/lib
+LIBS += -L$$PWD/libtorch/lib
 LIBS += -ltorch -lc10
 LIBS += -L/usr/local/lib
 LIBS += -ljansson
@@ -86,7 +86,6 @@ HEADERS += \
 
 RESOURCES += \
     aiscshapedatabase.qrc \
-    tests.qrc \
     braceImages.qrc \
     ai.qrc
 

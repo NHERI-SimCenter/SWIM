@@ -250,7 +250,7 @@ void deformWidget::plotModel()
 
             if (itr != loc.cend()) {
                 hindInner.push_back(int(std::distance(loc.cbegin(), itr)));
-                qDebug() << "Element present at index " << std::distance(loc.cbegin(), itr);
+                //qDebug() << "Element present at index " << std::distance(loc.cbegin(), itr);
             }
             else {
                 qDebug() << "Element not found";
@@ -270,7 +270,7 @@ void deformWidget::plotModel()
 
             if (itr != loc.cend()) {
                 vindInner.push_back(int(std::distance(loc.cbegin(), itr)));
-                qDebug() << "Element present at index " << std::distance(loc.cbegin(), itr);
+                //qDebug() << "Element present at index " << std::distance(loc.cbegin(), itr);
             }
             else {
                 qDebug() << "Element not found";

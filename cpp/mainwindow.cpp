@@ -280,7 +280,7 @@ MainWindow::MainWindow(QWidget *parent) :
     int height = this->height()<int(0.75*rec.height())?int(0.75*rec.height()):this->height();
     int width  = this->width()<int(0.85*rec.width())?int(0.85*rec.width()):this->width();
     this->resize(width, height);
-    wwidth = int(round(width*0.7));
+    wwidth = int(round(width*0.5));
     wheight= int(round(height*0.9));
     //this->setMaximumHeight(100);
 
@@ -1379,9 +1379,32 @@ void MainWindow::loadNewBtn_clicked()
 void MainWindow::addExp_clicked()
 {
     // call load file function
-    QString Filename = QFileDialog::getOpenFileName(this);
-    if (!Filename.isEmpty())
-        loadExperimentalFile(Filename);
+    QString dirname = QFileDialog::getExistingDirectory(this, tr("Open Directory"),
+                                                rootDir,
+                                                QFileDialog::ShowDirsOnly
+                                                | QFileDialog::DontResolveSymlinks);
+    QDir directory(dirname);
+    QString bimPath = directory.absoluteFilePath("BIM.json");
+    QString evtPath = directory.absoluteFilePath("EVT.json");
+    QString edpPath = directory.absoluteFilePath("EDP.json");
+    QFile bimFile(bimPath);
+    QFile evtFile(evtPath);
+    QFile edpFile(edpPath);
+
+    if(bimFile.exists() && evtFile.exists() && edpFile.exists())
+    {
+        QFileInfo info1(dirname);
+        QString newExpName = info1.baseName();
+
+        expNamesList.append(newExpName);
+        expDirList.append(dirname);
+        currentExpInd = expNamesList.size()-1;
+        loadExperimentalFile(dirname);
+    }else{
+        QMessageBox::information(this,tr("SWIM Information"), "Select a directory containing BIM.json EVT.json and EDP.json", tr("I know."));
+    }
+
+
 }
 //---------------------------------------------------------------
 // load AISC Shape Database
@@ -2821,8 +2844,8 @@ void MainWindow::cite()
 {
     QString textCite = "\
         <p>\
-Barbara Simpson, Frank McKenna, & Michael Gardner. (2018, September 28). \
-NHERI-SimCenter BracedFrameModeling (Version v1.0.0). Zenodo. http://doi.org/10.5281/zenodo.1438554 \
+Charles Wang & Frank McKenna. (2019, October). \
+NHERI-SimCenter SWIM (Version v1.0.0). Zenodo. http://doi.org/10.5281/zenodo \
       <p>\
       ";
 
@@ -3963,9 +3986,11 @@ void MainWindow::createInputPanel()
 
     QGridLayout *expLay = new QGridLayout();
 
+    /*
     QPushButton *loadNewBtn = new QPushButton("Load new");
     expLay->addWidget(loadNewBtn,0,2);
     connect(loadNewBtn,SIGNAL(clicked()), this, SLOT(loadNewBtn_clicked()));
+    */
 
     QPushButton *addExp = new QPushButton("Add Experiment");
     addExp->setToolTip(tr("Load different experiment"));
@@ -4161,10 +4186,13 @@ void MainWindow::createInputPanel()
     {
         wheight = this->height()<int(0.55*rec.height())?int(0.55*rec.height()):this->height();
         wwidth  = this->width()<int(0.55*rec.width())?int(0.55*rec.width()):this->width();
+        //wwidth = wwidth;
     }
-    inscrollArea->setMinimumSize(wwidth, wheight);
-    inscrollArea->setMaximumSize(wwidth*2, wheight*2);
+    //inscrollArea->setMinimumSize(wwidth*0.5, wheight);
+    //inscrollArea->setMaximumSize(wwidth*2, wheight);
     //inscrollArea->resize(wwidth, wheight);
+    inscrollArea->setMinimumWidth(tabWidget->width()+50);
+    //inscrollArea->setMaximumWidth(wwidth);
     mainLayout->addWidget(inscrollArea, 0);
 
 
@@ -4384,7 +4412,7 @@ void MainWindow::getSAM()
     in = inputFile.readAll();
     inputFile.close();
     }else{
-
+        QMessageBox::information(this,tr("SWIM Information"), "No SAM.json found.", tr("I know."));
     }
 
     QJsonDocument indoc = QJsonDocument::fromJson(in.toUtf8());
@@ -4613,7 +4641,8 @@ void MainWindow::createSAMui()
 
         rebarBoxSAMs.insert(rebarID, rebarWebBox);
 
-        webLay->addWidget(rebarWebBox,1,2, Qt::AlignTop);
+        //webLay->addWidget(rebarWebBox,1,2, Qt::AlignTop);
+        webLay->addWidget(rebarWebBox,3,0, Qt::AlignTop);
         webLay->setRowStretch(1,1);
 
         rebarWebBox->hide();
@@ -4663,7 +4692,8 @@ void MainWindow::createSAMui()
 
         steelBoxSAMs.append(steelWebBox);
 
-        webLay->addWidget(steelWebBox,1,3, Qt::AlignTop);
+        //webLay->addWidget(steelWebBox,1,3, Qt::AlignTop);
+        webLay->addWidget(steelWebBox,3,1, Qt::AlignTop);
         webLay->setRowStretch(1+i,1);
 
         steelWebBox->hide();
@@ -4678,8 +4708,10 @@ void MainWindow::createSAMui()
     // adding mat id selectors
     matIDselector_rc = addCombo(tr("Reinforced concrete layout "),matIDList_rc,&blank,webLay,0,0);
     matIDselector_concrete = addCombo(tr("Concrete model "),matIDList_concrete,&blank,webLay,0,1);
-    matIDselector_rebar = addCombo(tr("Rebar layout "),matIDList_rebar,&blank,webLay,0,2);
-    matIDselector_steel = addCombo(tr("Steel model "),matIDList_steel,&blank,webLay,0,3);
+    //matIDselector_rebar = addCombo(tr("Rebar layout "),matIDList_rebar,&blank,webLay,0,2);
+    //matIDselector_steel = addCombo(tr("Steel model "),matIDList_steel,&blank,webLay,0,3);
+    matIDselector_rebar = addCombo(tr("Rebar layout "),matIDList_rebar,&blank,webLay,2,0);
+    matIDselector_steel = addCombo(tr("Steel model "),matIDList_steel,&blank,webLay,2,1);
 
 
 
@@ -5500,7 +5532,7 @@ QComboBox *addCombo(QString text, QStringList items, QString *unitText,
     // width
     QRect rec = QApplication::desktop()->screenGeometry();
     //int height = 0.7*rec.height();
-    int width = 0.25*rec.width();
+    int width = 0.55*rec.width();
     res->setMaximumWidth(0.25*width/2);
     res->setMinimumWidth(0.2*width/2);
 

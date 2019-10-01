@@ -759,6 +759,19 @@ ConcreteShearWall::initConcrete(double tbeta, double tAn, double tAp, double tBn
   An = tAn;
   Ap = tAp;
   Bn = tBn;
+
+  nL = 1;
+  nH = 1;
+  nW = 2;
+
+  //theModel = 0;
+  eleTag = 0;
+  tol = 1e-7; //1e-15;
+
+
+  SwimMaterial::numTagND = 0;
+  SwimMaterial::numTagUni = 0;
+
 }
 
 void ConcreteShearWall::error(string message, int errorFlag)
