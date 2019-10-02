@@ -33,8 +33,11 @@ int PostProcessor::getLineCount()
 void PostProcessor::init()
 {
     totalLines = getLineCount();
-    calcForce();
-    calcDeform();
+    if(totalLines==m_numSteps)
+    {
+        calcForce();
+        calcDeform();
+    }
 }
 
 

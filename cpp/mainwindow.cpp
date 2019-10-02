@@ -3017,14 +3017,17 @@ void MainWindow::doWallAnalysisOpenSees()
 
 }
 
-
+int MainWindow::getstepOpenSees()
+{
+    return stepOpenSees;
+}
 void MainWindow::onOpenSeesFinished()
 {
 
     //writeSurfaceMotion();
     QString str_err = openseesProcess->readAllStandardError();
 
-
+    int stepOpenSeestmp = 0;
 
     if(openseesErrCount==1)
     {
@@ -3035,7 +3038,13 @@ void MainWindow::onOpenSeesFinished()
             expWall->setTime();
             setExp(expWall);
 
-            if(stepOpenSees<(numSteps-2.0)/numSteps*100.){//
+            stepOpenSeestmp = getstepOpenSees();
+
+
+            PostProcessor *postprocessor = new PostProcessor(expDirName,numSteps);
+            if(postprocessor->getLineCount()!=numSteps)
+            {
+            //if(stepOpenSeestmp<int(ceil((numSteps-1.0)/numSteps*100.0))){//
             //if(false){
                 openseesErrCount = 2;
                 QMessageBox::information(this,tr("OpenSees Information"), "OpenSees failed to complete. Try using lesser elements. ", tr("I know."));
@@ -3043,7 +3052,6 @@ void MainWindow::onOpenSeesFinished()
                 stepOpenSees = 0;
                 emit signalProgress(1);
                 progressbar->hide();
-
             }
             else
             {
@@ -3057,8 +3065,6 @@ void MainWindow::onOpenSeesFinished()
 
                 emit signalProgress(100);
                 progressbar->hide();
-
-                PostProcessor *postprocessor = new PostProcessor(expDirName);
 
                 //std::vector<double> *a = &thePreprocessor->dispVec;
                 //std::vector<double> b = postprocessor->force[0];
