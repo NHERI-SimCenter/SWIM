@@ -2731,7 +2731,7 @@ void MainWindow::about()
 // Link to submit feedback through issue on GitHub
 void MainWindow::submitFeedback()
 {
-  QDesktopServices::openUrl(QUrl("https://github.com/NHERI-SimCenter/BracedFrameModeling/issues", QUrl::TolerantMode));
+  QDesktopServices::openUrl(QUrl("https://github.com/NHERI-SimCenter/SWIM/issues", QUrl::TolerantMode));
 }
 
 // Version this release
