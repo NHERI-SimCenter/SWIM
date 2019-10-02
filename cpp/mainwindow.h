@@ -62,6 +62,15 @@ UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 #include "experimentWall.h"
 #include "PostProcessor.h"
 
+class SleeperThread : public QThread
+{
+public:
+    static void msleep(unsigned long msecs)
+    {
+        QThread::msleep(msecs);
+    }
+};
+
 
 //class Experiment;
 class Resp;
@@ -276,6 +285,7 @@ private slots:
     void openseespathEdt_textChanged(QString);
     bool copyDir(const QDir& from, const QDir& to, bool cover);
     void AIbtn_clicked();
+    int getstepOpenSees();
 
 
     // Combo Box

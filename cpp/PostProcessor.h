@@ -17,7 +17,7 @@ class PostProcessor : public QDialog
 public:
     explicit PostProcessor(QWidget *parent = nullptr);
     PostProcessor(QTabWidget *tab,QWidget *parent = nullptr);
-    PostProcessor(QString outDir) : m_outputDir(outDir){init();}
+    PostProcessor(QString outDir, int numSteps) : m_outputDir(outDir),m_numSteps(numSteps) {init();}
     int getLineCount();
     void update();
     void calcForce();
@@ -42,6 +42,7 @@ private:
 
 
     QString m_outputDir;
+    int m_numSteps;
     // opensees results
     QString forceFileName = QDir(m_outputDir).filePath("resultsOpenSees.out");
     QString xFileName = QDir(m_outputDir).filePath("dispx.out");

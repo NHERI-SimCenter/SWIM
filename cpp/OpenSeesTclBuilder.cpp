@@ -1512,8 +1512,9 @@ int OpenSeesTclBuilder::processEvents(ofstream &s)
       s << "} \n";
       s << "set progress [expr ($i*1.0)/($nPts*1.0) * 100.]\n";
       s << "puts \"$progress%\"\n";
-      s << "} \n";
+      s << "} \n\n";
 
+      //s << "after 1000\n";
       s << "puts \"cyclic is done.\""
         << "\n\n";
 
