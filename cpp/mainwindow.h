@@ -52,7 +52,7 @@ UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 #include <QDir>
 #include <qcustomplot/qcustomplot.h>
 
-#include <Vector.h>
+//#include <Vector.h>
 
 #include <HeaderWidget.h>
 #include <FooterWidget.h>
@@ -63,7 +63,7 @@ UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 #include "PostProcessor.h"
 
 
-class Experiment;
+//class Experiment;
 class Resp;
 class historyWidget;
 class deformWidget;
@@ -375,7 +375,7 @@ private:
     // load information
     void loadAISC();
     void setExp(ExperimentWall *exp);
-    void setExp(Experiment *exp);
+    //void setExp(Experiment *exp);
     void initialize();
     void zeroResponse();
 

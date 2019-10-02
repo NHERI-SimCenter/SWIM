@@ -27,7 +27,7 @@ win32 {
 include(../../SimCenterCommon/Common/Common.pri)
 
 # load OpenSees
-include(OPS_includes.pro)
+#include(OPS_includes.pro)
 
 
 INCLUDEPATH += $$PWD/libtorch/include
@@ -53,7 +53,6 @@ LIBS += -ljansson
 SOURCES += \
     main.cpp \
     mainwindow.cpp \
-    experiment.cpp \
     responsewidget.cpp \
     resp.cpp \
     historywidget.cpp \
@@ -68,7 +67,6 @@ SOURCES += \
 
 HEADERS += \
     mainwindow.h \
-    experiment.h \
     responsewidget.h \
     resp.h \
     historywidget.h \
