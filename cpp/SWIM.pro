@@ -32,6 +32,7 @@ include(../../SimCenterCommon/Common/Common.pri)
 
 INCLUDEPATH += $$PWD/libtorch/include
 INCLUDEPATH += /usr/local/include
+INCLUDEPATH += .
 LIBS += -L$$PWD/libtorch/lib
 LIBS += -ltorch -lc10
 LIBS += -L/usr/local/lib

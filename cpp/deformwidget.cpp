@@ -324,8 +324,14 @@ void deformWidget::plotModel()
     thePlot->yAxis->setRange(minY-1,maxY+1);
     */
     // axes
-    thePlot->xAxis->setRange(0-10,0+wallw+10);
-    thePlot->yAxis->setRange(0-10,0+wallh+10);
+    if(wallw>wallh)
+    {
+        thePlot->xAxis->setRange(0-10,0+wallw+10);
+        thePlot->yAxis->setRange(0-10,0+wallw+10);
+    }else{
+        thePlot->xAxis->setRange(0-10-(wallh-wallw)/2,0+wallw+(wallh-wallw)/2+10);
+        thePlot->yAxis->setRange(0-10,0+wallh+10);
+    }
 
     // update plot
     thePlot->replot(QCustomPlot::rpQueuedReplot);
@@ -475,8 +481,14 @@ void deformWidget::plotResponse(int t)
     thePlot->yAxis->setRange(minY-1,maxY+1);
     */
     // axes
-    thePlot->xAxis->setRange(0-10,0+wallw+10);
-    thePlot->yAxis->setRange(0-10,0+wallh+10);
+    if(wallw>wallh)
+    {
+        thePlot->xAxis->setRange(0-10,0+wallw+10);
+        thePlot->yAxis->setRange(0-10,0+wallw+10);
+    }else{
+        thePlot->xAxis->setRange(0-10-(wallh-wallw)/2,0+wallw+(wallh-wallw)/2+10);
+        thePlot->yAxis->setRange(0-10,0+wallh+10);
+    }
 
     // update plot
     thePlot->replot(QCustomPlot::rpQueuedReplot);
