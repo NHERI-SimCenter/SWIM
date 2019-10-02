@@ -37,7 +37,7 @@ UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 #include <cmath>
 #include "experimentWall.h"
-#include <Vector.h>
+
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QJsonValue>

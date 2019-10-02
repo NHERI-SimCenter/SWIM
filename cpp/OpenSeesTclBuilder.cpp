@@ -74,6 +74,7 @@ int OpenSeesTclBuilder::writeRV(const char *BIM,
   // write the file & clean memory
   json_dump_file(root, outputFilename, 0);
   json_object_clear(root);
+  return 0;
 }
 
 
@@ -145,10 +146,20 @@ int OpenSeesTclBuilder::createInputFileBeamColumn(const char *BIM,
 
   printf("making tcl files... \n");
 
-  mkdir(filenameTCL,S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH); 
+#ifdef Q_OS_WIN
+  _mkdir(filenameTCL);
+#else
+  mkdir(filenameTCL,S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+#endif
+
   char * basedir = (char *) malloc(1 + strlen(filenameTCL)+ strlen("/staticFiles") );
   strcpy(basedir, filenameTCL);
-  mkdir(strcat(basedir ,"/staticFiles"),S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH); 
+
+#ifdef Q_OS_WIN
+  _mkdir(strcat(basedir ,"/staticFiles"));
+#else
+  mkdir(strcat(basedir ,"/staticFiles"),S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+#endif
 
   std::string filenameTCL_geo = std::string(filenameTCL) + "/staticFiles/modelGeometry.tcl" ; 
   //std::string filenameTCL_geo = "/Users/simcenter/Codes/SimCenter/BIM2SAM/Data/ConcreteShearWallBeamcolumn/For AI-M/DazioWSH6/staticFiles/modelGeometry.tcl";
