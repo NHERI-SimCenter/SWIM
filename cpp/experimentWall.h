@@ -39,6 +39,9 @@ UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 
 #include <QString>
+#ifdef Q_OS_WIN
+  #include <vector>
+#endif
 class QJsonValue;
 
 class ExperimentWall

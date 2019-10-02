@@ -13,6 +13,9 @@ class json_t;
 #include <string>
 #include <cstring>
 #include <jansson.h>
+#ifdef Q_OS_WIN
+    #include <direct.h>
+#endif
 using namespace::std;
 
 class OpenSeesTclBuilder {
