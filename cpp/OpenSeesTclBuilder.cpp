@@ -148,7 +148,8 @@ int OpenSeesTclBuilder::createInputFileBeamColumn(const char *BIM,
 
 #ifdef Q_OS_WIN
   _mkdir(filenameTCL);
-#else
+#endif
+#ifdef Q_OS_OSX
   mkdir(filenameTCL,S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 #endif
 
@@ -157,7 +158,8 @@ int OpenSeesTclBuilder::createInputFileBeamColumn(const char *BIM,
 
 #ifdef Q_OS_WIN
   _mkdir(strcat(basedir ,"/staticFiles"));
-#else
+#endif
+#ifdef Q_OS_OSX
   mkdir(strcat(basedir ,"/staticFiles"),S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 #endif
 
