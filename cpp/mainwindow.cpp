@@ -2738,7 +2738,7 @@ void MainWindow::submitFeedback()
 void MainWindow::version()
 {
     QMessageBox::about(this, tr("Version"),
-                       tr("Version 1.0"));
+                       tr("Version 1.0.1"));
 }
 
 // Copyright specification to include in Help menu
