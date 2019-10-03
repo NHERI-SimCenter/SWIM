@@ -39,6 +39,10 @@ UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 int main(int argc, char *argv[])
 {
+
+    QCoreApplication::setApplicationName("SWIM");
+    QCoreApplication::setOrganizationName("SimCenter");
+
     QApplication a(argc, argv);
     MainWindow w;
     w.show();
