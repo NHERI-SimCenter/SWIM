@@ -3303,8 +3303,10 @@ void MainWindow::createInputPanel()
     wallBIMLay = new QGridLayout();
 
 
-    QLineEdit *expNameEdt = addLineEdit(tr("Experiment name: "), QString("my cool experiment"),wallBIMLay,0,0);
-    expNameEdt->setDisabled(true);
+    theExpNameEdt = addLineEdit(tr("Experiment name: "), thisexpname,wallBIMLay,0,0);
+    theExpNameEdt->setDisabled(true);
+
+
 
     QSpinBox *nofEdt = addSpin(tr("Number of floors: "),&blank,wallBIMLay,1,0);
     nofEdt->setValue(theWall->numFloors);
@@ -3496,7 +3498,7 @@ void MainWindow::AIbtn_clicked()
         concreteBnEdt[cIDtmp]->setValue(Bn);
         concretebetaEdt[cIDtmp]->setValue(beta);
 
-        concreteApEdt[cIDtmp]->setStyleSheet("background-color: yellow");
+        concreteApEdt[cIDtmp]->setStyleSheet("border-color: green;");
         concreteAnEdt[cIDtmp]->setStyleSheet("background-color: yellow");
         concreteBnEdt[cIDtmp]->setStyleSheet("background-color: yellow");
         concretebetaEdt[cIDtmp]->setStyleSheet("background-color: yellow");
@@ -3610,6 +3612,7 @@ void MainWindow::createSAM()
     theWall->initConcrete(beta, An, Ap, Bn);
     theWall->readBIM(filenameEVENT, bimFileName.toStdString().c_str());
     theWall->writeSAM(samFileName.toStdString().c_str(), nL, nH, nW);
+    thisexpname = QString::fromStdString(theWall->expName);
 
     printf("SAM file created successfully. \n");
 
