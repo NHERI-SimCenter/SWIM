@@ -764,6 +764,9 @@ private:
 
     int stepOpenSees = 0;
 
+    QLineEdit *theExpNameEdt;
+    QString thisexpname;
+
 
 
 signals:

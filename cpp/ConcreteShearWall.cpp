@@ -828,6 +828,7 @@ int ConcreteShearWall::readBIM(const char *event, const char *bim)
   json_t *GI = json_object_get(rootBIM, "GeneralInformation");
   json_t *yType = json_object_get(GI, "yBuilt");
   int nStory = json_integer_value(json_object_get(GI, "stories"));
+  expName = json_string_value(json_object_get(GI, "name"));
   volumne = json_real_value(json_object_get(GI, "volume"));
 
   numFloors = nStory;
