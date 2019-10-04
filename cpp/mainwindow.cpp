@@ -205,6 +205,12 @@ MainWindow::MainWindow(QWidget *parent) :
     inExp->setCurrentIndex(currentExpInd);
     connect(inExp,SIGNAL(currentIndexChanged(int)), this, SLOT(inExp_currentIndexChanged(int)));
 
+    dPlot->setColor(theWallColor);
+    dPlot->plotModel();
+
+
+
+
 
 /*
     // access a web page which will increment the usage count for this tool
@@ -311,6 +317,7 @@ void MainWindow::initialize()
 
     eleSizeBEEdt->setValue(beLength);
     eleSizeWebEdt->setValue(webLength);
+
 }
 
 // reset
@@ -1289,6 +1296,7 @@ void MainWindow::loadNewBtn_clicked()
     //inExp->setCurrentIndex(1);
     dPlot->setExpDir(inExp->itemData(inExp->currentIndex()).toString());
     updateSAMFile();
+    dPlot->setColor(theWallColor);
     dPlot->plotModel();
 
 
@@ -3476,6 +3484,8 @@ void MainWindow::createInputPanel()
 
 void MainWindow::AIbtn_clicked()
 {
+
+
     // AI predicts parameters and update the UI
     std::vector<float> AIinputsVec = getAIinputs();
     std::vector<float> predValues = ai.predict(AIinputsVec);// ['Ap','An', 'Bn', 'beta','N']
@@ -3498,17 +3508,20 @@ void MainWindow::AIbtn_clicked()
         concreteBnEdt[cIDtmp]->setValue(Bn);
         concretebetaEdt[cIDtmp]->setValue(beta);
 
-        concreteApEdt[cIDtmp]->setStyleSheet("border-color: green;");
-        concreteAnEdt[cIDtmp]->setStyleSheet("background-color: yellow");
-        concreteBnEdt[cIDtmp]->setStyleSheet("background-color: yellow");
-        concretebetaEdt[cIDtmp]->setStyleSheet("background-color: yellow");
+        concreteApEdt[cIDtmp]->setStyleSheet("background-color: rgb(102,204,0)");
+        concreteAnEdt[cIDtmp]->setStyleSheet("background-color: rgb(102,204,0)");
+        concreteBnEdt[cIDtmp]->setStyleSheet("background-color: rgb(102,204,0)");
+        concretebetaEdt[cIDtmp]->setStyleSheet("background-color: rgb(102,204,0)");
 
     }
     nLAI = std::max(int(predValues[4]),1);// number of elements along web length
     eleSizeWebEdt->setValue(webLength/double(nLAI));
     eleSizeBEEdt->setValue(beLength/2.0);// default mesh of boundary: 2 elements
-    eleSizeWebEdt->setStyleSheet("background-color: yellow");
-    eleSizeBEEdt->setStyleSheet("background-color: yellow");
+    eleSizeWebEdt->setStyleSheet("background-color: rgb(102,204,0)");
+    eleSizeBEEdt->setStyleSheet("background-color: rgb(102,204,0)");
+
+    dPlot->setColor(QColor(102,204,0,150));
+    dPlot->plotModel();
     updateSAMFile();
 
 }
@@ -3519,6 +3532,7 @@ void MainWindow::ESize_valueChanged_SAM(double esize)
      if (dPlot != nullptr)
      {
          updateSAMFile();
+         dPlot->setColor(theMeshColor);
          dPlot->plotModel();
      }
 }
@@ -4236,14 +4250,44 @@ void MainWindow::rc_valueChanged_SAM()
 void MainWindow::beta_valueChanged_SAM(double){
     beta = concretebetaEdt.first()->value();
     concretebetaEdt.first()->setStyleSheet("");
+
+    if (dPlot != nullptr)
+    {
+        updateSAMFile();
+        dPlot->setColor(theMeshColor);
+        dPlot->plotModel();
+    }
 }
 
-void MainWindow::Ap_valueChanged_SAM(double){Ap = concreteApEdt.first()->value();
-                                            concreteApEdt.first()->setStyleSheet("");}
-void MainWindow::An_valueChanged_SAM(double){An = concreteAnEdt.first()->value();
-                                            concreteAnEdt.first()->setStyleSheet("");}
-void MainWindow::Bn_valueChanged_SAM(double){Bn = concreteBnEdt.first()->value();
-                                            concreteBnEdt.first()->setStyleSheet("");}
+void MainWindow::Ap_valueChanged_SAM(double){
+    Ap = concreteApEdt.first()->value();
+    concreteApEdt.first()->setStyleSheet("");
+    if (dPlot != nullptr)
+    {
+        updateSAMFile();
+        dPlot->setColor(theMeshColor);
+        dPlot->plotModel();
+    }
+}
+void MainWindow::An_valueChanged_SAM(double){
+    An = concreteAnEdt.first()->value();
+    concreteAnEdt.first()->setStyleSheet("");
+    if (dPlot != nullptr)
+    {
+        updateSAMFile();
+        dPlot->setColor(theMeshColor);
+        dPlot->plotModel();
+    }}
+void MainWindow::Bn_valueChanged_SAM(double){
+    Bn = concreteBnEdt.first()->value();
+    concreteBnEdt.first()->setStyleSheet("");
+    if (dPlot != nullptr)
+    {
+        updateSAMFile();
+        dPlot->setColor(theMeshColor);
+        dPlot->plotModel();
+    }
+}
 
 void MainWindow::concrete_valueChanged_SAM(double){
     int currentConcreteID =  matIDselector_concrete->currentText().toInt();
@@ -4271,6 +4315,7 @@ void MainWindow::concrete_valueChanged_SAM(double){
         }
     }
 
+    /*
     // write out for testing
     QString tmpfile = expDirName + "/concrete_SAM_debug.json";
     QFile jsonFile(tmpfile);
@@ -4281,6 +4326,7 @@ void MainWindow::concrete_valueChanged_SAM(double){
         jsonFile.write(tmpDoc.toJson());
     }
     jsonFile.close();
+    */
 
 }
 void MainWindow::rebar_valueChanged_SAM()

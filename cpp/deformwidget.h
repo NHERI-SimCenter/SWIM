@@ -82,6 +82,7 @@ private:
 
     std::vector<std::vector<int>> horizontalIndex;
     std::vector<std::vector<int>> verticalIndex;
+    std::vector<int> outLineIndex;
     std::vector<std::vector<double>> loc;
 
     std::vector<std::vector<double>> *dispx;
@@ -100,9 +101,11 @@ public:
     void plotResponse_old(int t = 0);
     void putSomeColorInMesh();
     void setExpDir(QString tmDir){expDirName = tmDir;}
+    void setColor(QColor c){theColor=c;}
     QString expDirName = "";
     double wallw = 0.0;
     double wallh = 0.0;
+    QColor theColor = QColor(96,96,96,150);
 };
 
 #endif // DEFORMWIDGET_H
