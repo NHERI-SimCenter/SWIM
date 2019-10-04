@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
     w.show();
 
 
-    QFile file(":/styleCommon/style.qss");
+    QFile file(":/styleCommon/common_experimental.qss");
     if(file.open(QFile::ReadOnly)) {
         QString styleSheet = QLatin1String(file.readAll());
         a.setStyleSheet(styleSheet);

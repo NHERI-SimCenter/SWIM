@@ -279,6 +279,15 @@ void deformWidget::plotModel()
         verticalIndex.push_back(vindInner);
     }
 
+    outLineIndex.clear();
+    for(int i=0;i<verticalIndex[0].size();i++)
+        outLineIndex.push_back(verticalIndex[0][i]);
+    for(int i=0;i<horizontalIndex.back().size();i++)
+        outLineIndex.push_back(horizontalIndex.back()[i]);
+    for(int i=verticalIndex.back().size()-1;i>-1;i--)
+        outLineIndex.push_back(verticalIndex.back()[i]);
+
+
 
 
     // create pen
@@ -300,7 +309,7 @@ void deformWidget::plotModel()
         thePlot->graph()->setPen(pen);
         thePlot->graph()->setData(xh,yh,true);
     }
-    for(int i=0; i<int(horizontalIndex.size());i++)
+    for(int i=0; i<int(horizontalIndex.size())-1;i++)
     {
         QVector<double> xh,yh;
         for (int j=0;j< horizontalIndex[i].size(); j++)
@@ -311,6 +320,23 @@ void deformWidget::plotModel()
         graph = thePlot->addGraph();
         thePlot->graph()->setPen(pen);
         //thePlot->graph()->setBrush(QBrush(QColor(0,0,255,100)));
+        thePlot->graph()->setData(xh,yh,true);
+    }
+
+    double x0,y0;
+    if(int(outLineIndex.size())>0)
+    {
+        QVector<double> xh,yh;
+        for (int j=0;j< outLineIndex.size(); j++)
+        {
+            x0 = loc[outLineIndex[j]][0];
+            y0 = loc[outLineIndex[j]][1];
+            xh.append(x0);
+            yh.append(y0);
+        }
+        graph = thePlot->addGraph();
+        //thePlot->graph()->setPen(pen);
+        thePlot->graph()->setBrush(QBrush(theColor));
         thePlot->graph()->setData(xh,yh,true);
     }
 
@@ -469,7 +495,28 @@ void deformWidget::plotResponse(int t)
             //thePlot->graph()->setBrush(QBrush(QColor(0,0,255,100)));
             thePlot->graph()->setData(xh,yh,true);
         }
+
+        if(int(outLineIndex.size())>0)
+        {
+            QVector<double> xh,yh;
+            for (int j=0;j< outLineIndex.size(); j++)
+            {
+                x0 = loc[outLineIndex[j]][0];
+                y0 = loc[outLineIndex[j]][1];
+
+                xh.append(x0+(*dispx)[t][outLineIndex[j]]);
+                yh.append(y0+(*dispy)[t][outLineIndex[j]]);
+            }
+            graph = thePlot->addGraph();
+            //thePlot->graph()->setPen(pen);
+            thePlot->graph()->setBrush(QBrush(theColor));
+            thePlot->graph()->setData(xh,yh,true);
+        }
+
+
     }
+
+
 
     //putSomeColorInMesh();
 

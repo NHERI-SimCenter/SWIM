@@ -767,6 +767,9 @@ private:
     QLineEdit *theExpNameEdt;
     QString thisexpname;
 
+    QColor theMeshColor = QColor(51,153,255,150);
+    QColor theWallColor = QColor(96,96,96,150);
+
 
 
 signals:
