@@ -2,7 +2,7 @@
 # SWIM: AI-enabled finite element modeling of concrete shear walls
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3466375.svg)](https://doi.org/10.5281/zenodo.3466375)
 
-![image](doc/SWIM.png)
+![image](docs/SWIM.gif)
 
 Shear walls are commonly used lateral resisting systems in buildings. During large events, particularly seismic events,
 the buildings may experience shear failure of these walls. Capturing the behavior of individual walls to
