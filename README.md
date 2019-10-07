@@ -10,7 +10,7 @@ shear failure is critically important if one is to determine the response of suc
 This application is intended to educate users on how concrete shear walls should be modeled when performing
 numerical simulations of the entire building. This application will allow the user to explore how different modeling
 assumptions affect the response of a concrete shear wall element and how the simulated response compares with actual experimental
-data. Machine learning algorithms are inserted into the backend to help users choose resonable parameters for the model.
+data. Machine learning algorithms are inserted into the backend to help users choose reasonable parameters for the model.
 Allowing the user to validate their modeling assumptions is critically important for the user to gain competence
 in this area, as just producing hysteresis loops that look meaningful can be dangerously misleading.
 
