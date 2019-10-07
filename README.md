@@ -17,7 +17,7 @@ in this area, as just producing hysteresis loops that look meaningful can be dan
 ### How to Cite
 You can cite this software as follows:
 
-Charles Wang. (2019, October 1). NHERI-SimCenter/SWIM: v1.0.0 (Version v1.0.0). Zenodo. http://doi.org/10.5281/zenodo.3466376
+Charles Wang. (2019, October 7). NHERI-SimCenter/SWIM: Release v1.0.1 (Version v1.0.1). Zenodo. http://doi.org/10.5281/zenodo.3475481
 
 
 ### Acknowledgement
