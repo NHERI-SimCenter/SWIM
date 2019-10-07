@@ -2,7 +2,7 @@
 # SWIM: AI-enabled finite element modeling of concrete shear walls
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3466375.svg)](https://doi.org/10.5281/zenodo.3466375)
 
-![image](doc/SWIM.png)
+![image](docs/SWIM.gif)
 
 Shear walls are commonly used lateral resisting systems in buildings. During large events, particularly seismic events,
 the buildings may experience shear failure of these walls. Capturing the behavior of individual walls to
@@ -17,7 +17,7 @@ in this area, as just producing hysteresis loops that look meaningful can be dan
 ### How to Cite
 You can cite this software as follows:
 
-Charles Wang. (2019, October 1). NHERI-SimCenter/SWIM: v1.0.0 (Version v1.0.0). Zenodo. http://doi.org/10.5281/zenodo.3466376
+Charles Wang. (2019, October 7). NHERI-SimCenter/SWIM: Release v1.0.1 (Version v1.0.1). Zenodo. http://doi.org/10.5281/zenodo.3475481
 
 
 ### Acknowledgement
