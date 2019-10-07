@@ -6,6 +6,7 @@
 
 ### What is SWIM?
 
+SWIM is the acronym for Shear Wall Intelligent Modeling. The word "Intelligent" indicates this application is AI-enabled.
 Shear walls are commonly used lateral resisting systems in buildings. During large events, particularly seismic events,
 the buildings may experience shear failure of these walls. Capturing the behavior of individual walls to
 shear failure is critically important if one is to determine the response of such buildings to large magnitude events.
